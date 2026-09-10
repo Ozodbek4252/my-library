@@ -22,6 +22,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Book Collection uses the camera to scan the barcode on a book so it can tell you whether you already own it.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Book Collection lets you attach photos of your own copies.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>$(PRODUCT_COPYRIGHT)</string>
 	<key>NSMainNibFile</key>

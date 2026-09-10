@@ -1,6 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Barcode scanning. -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Book metadata lookup by ISBN and cover images. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Photos of the user's own copies (Android 13+ and older). -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"/>
+
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
-        android:label="my_library"
+        android:label="Book Collection"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

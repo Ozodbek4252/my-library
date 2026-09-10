@@ -47,6 +47,10 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Book Collection uses the camera to scan the barcode on a book so it can tell you whether you already own it.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Book Collection lets you attach photos of your own copies — the cover, the spine, a signature.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

@@ -5,8 +5,9 @@ plugins {
 }
 
 android {
-    namespace = "com.example.my_library"
-    compileSdk = flutter.compileSdkVersion
+    namespace = "com.bookcollection.app"
+    // permission_handler_android requires API 37 to compile against.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -15,11 +16,12 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.my_library"
+        applicationId = "com.bookcollection.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // mobile_scanner (CameraX/ML Kit) needs 21+; image_picker photo access
+        // behaves consistently from 23.
+        minSdk = maxOf(flutter.minSdkVersion, 23)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
