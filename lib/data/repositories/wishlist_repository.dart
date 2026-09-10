@@ -222,10 +222,12 @@ class WishlistRepository {
     });
   }
 
+  /// Matches the placeholder colour a book would get once it is owned.
   static int _colorFor(String key) {
-    var hash = 0;
+    var hash = 0x811C9DC5;
     for (final unit in key.codeUnits) {
-      hash = (hash * 31 + unit) & 0x7FFFFFFF;
+      hash = (hash ^ unit) & 0xFFFFFFFF;
+      hash = (hash * 0x01000193) & 0xFFFFFFFF;
     }
     return hash % 12;
   }

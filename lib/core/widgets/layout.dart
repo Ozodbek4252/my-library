@@ -256,6 +256,7 @@ class ProgressTrack extends StatelessWidget {
             Positioned.fill(child: ColoredBox(color: background)),
             FractionallySizedBox(
               widthFactor: value.clamp(0.0, 1.0),
+              heightFactor: 1,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: fill,

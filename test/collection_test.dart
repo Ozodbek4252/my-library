@@ -368,6 +368,27 @@ void main() {
     });
   });
 
+  group('cover placeholders', () {
+    test('editions of one work get different colours', () async {
+      // The three printings of 1984 share a long ISBN prefix; their spines
+      // still have to be told apart at a glance.
+      final indexes = ['1984_penguin', '1984_ast', '1984_clothbound']
+          .map((key) => localCatalog[key]!.toDraft().coverColorIndex)
+          .toSet();
+      expect(indexes, hasLength(3));
+    });
+
+    test('the whole catalogue spreads across the palette', () async {
+      final used = localCatalog.values
+          .map((b) => b.toDraft().coverColorIndex)
+          .toSet();
+      expect(used.length, greaterThanOrEqualTo(6));
+      for (final index in used) {
+        expect(index, inInclusiveRange(0, 11));
+      }
+    });
+  });
+
   group('incomplete data', () {
     test('a book with no edition, pages or author still loads', () async {
       final added = await db.addBook(BookDraft(title: 'A pamphlet'));

@@ -82,7 +82,7 @@ class LibraryRepository {
       final rows = await _db
           .customSelect(
             'SELECT DISTINCT ${column.name} AS v FROM editions '
-            'WHERE ${column.name} IS NOT NULL AND ${column.name} != "" '
+            "WHERE ${column.name} IS NOT NULL AND ${column.name} != '' "
             'ORDER BY v COLLATE NOCASE',
             readsFrom: {_db.editions},
           )
@@ -93,7 +93,7 @@ class LibraryRepository {
     Future<List<String>> distinctList(String column) async {
       final rows = await _db
           .customSelect(
-            'SELECT DISTINCT $column AS v FROM works WHERE $column != ""',
+            "SELECT DISTINCT $column AS v FROM works WHERE $column != ''",
             readsFrom: {_db.works},
           )
           .get();
@@ -116,7 +116,7 @@ class LibraryRepository {
     final series = await _db
         .customSelect(
           'SELECT DISTINCT series_name AS v FROM works '
-          'WHERE series_name IS NOT NULL AND series_name != "" ORDER BY v',
+          "WHERE series_name IS NOT NULL AND series_name != '' ORDER BY v",
           readsFrom: {_db.works},
         )
         .get();

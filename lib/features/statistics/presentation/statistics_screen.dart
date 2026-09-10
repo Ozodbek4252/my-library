@@ -293,6 +293,7 @@ class _LanguageBar extends StatelessWidget {
           child: SizedBox(
             height: 12,
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 for (var i = 0; i < stats.byLanguage.length; i++)
                   Expanded(
@@ -376,6 +377,7 @@ class _GenreBars extends StatelessWidget {
                           FractionallySizedBox(
                             widthFactor:
                                 max == 0 ? 0 : (slice.count / max).clamp(0.0, 1.0),
+                            heightFactor: 1,
                             child: const DecoratedBox(
                               decoration: BoxDecoration(
                                 color: Color(0xFF5A5248),

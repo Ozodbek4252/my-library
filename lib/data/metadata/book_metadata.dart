@@ -86,10 +86,15 @@ class BookMetadata {
 
   /// Stable placeholder colour so a book without artwork looks the same on
   /// every launch and on every device.
+  ///
+  /// FNV-1a rather than a simple polynomial hash: ISBNs of the same work share
+  /// a long prefix, and a weaker hash gives every edition of a book the same
+  /// colour — exactly where distinct spines matter most.
   static int _colorFor(String key) {
-    var hash = 0;
+    var hash = 0x811C9DC5;
     for (final unit in key.codeUnits) {
-      hash = (hash * 31 + unit) & 0x7FFFFFFF;
+      hash = (hash ^ unit) & 0xFFFFFFFF;
+      hash = (hash * 0x01000193) & 0xFFFFFFFF;
     }
     return hash % 12;
   }
