@@ -1191,6 +1191,17 @@ class $EditionsTable extends Editions with TableInfo<$EditionsTable, Edition> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _coverImagePathMeta = const VerificationMeta(
+    'coverImagePath',
+  );
+  @override
+  late final GeneratedColumn<String> coverImagePath = GeneratedColumn<String>(
+    'cover_image_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _coverColorIndexMeta = const VerificationMeta(
     'coverColorIndex',
   );
@@ -1281,6 +1292,7 @@ class $EditionsTable extends Editions with TableInfo<$EditionsTable, Edition> {
     editionName,
     pageCount,
     coverUrl,
+    coverImagePath,
     coverColorIndex,
     dimensions,
     weightGrams,
@@ -1381,6 +1393,15 @@ class $EditionsTable extends Editions with TableInfo<$EditionsTable, Edition> {
       context.handle(
         _coverUrlMeta,
         coverUrl.isAcceptableOrUnknown(data['cover_url']!, _coverUrlMeta),
+      );
+    }
+    if (data.containsKey('cover_image_path')) {
+      context.handle(
+        _coverImagePathMeta,
+        coverImagePath.isAcceptableOrUnknown(
+          data['cover_image_path']!,
+          _coverImagePathMeta,
+        ),
       );
     }
     if (data.containsKey('cover_color_index')) {
@@ -1484,6 +1505,10 @@ class $EditionsTable extends Editions with TableInfo<$EditionsTable, Edition> {
         DriftSqlType.string,
         data['${effectivePrefix}cover_url'],
       ),
+      coverImagePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cover_image_path'],
+      ),
       coverColorIndex: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}cover_color_index'],
@@ -1540,6 +1565,11 @@ class Edition extends DataClass implements Insertable<Edition> {
   final int? pageCount;
   final String? coverUrl;
 
+  /// A cover the user photographed or picked themselves, stored in the app's
+  /// own directory. Takes precedence over [coverUrl]: if someone went to the
+  /// trouble of photographing their copy, that is the cover they want to see.
+  final String? coverImagePath;
+
   /// Index into the cover placeholder palette, so a missing cover still gets a
   /// stable colour across restarts.
   final int coverColorIndex;
@@ -1562,6 +1592,7 @@ class Edition extends DataClass implements Insertable<Edition> {
     this.editionName,
     this.pageCount,
     this.coverUrl,
+    this.coverImagePath,
     required this.coverColorIndex,
     this.dimensions,
     this.weightGrams,
@@ -1604,6 +1635,9 @@ class Edition extends DataClass implements Insertable<Edition> {
     }
     if (!nullToAbsent || coverUrl != null) {
       map['cover_url'] = Variable<String>(coverUrl);
+    }
+    if (!nullToAbsent || coverImagePath != null) {
+      map['cover_image_path'] = Variable<String>(coverImagePath);
     }
     map['cover_color_index'] = Variable<int>(coverColorIndex);
     if (!nullToAbsent || dimensions != null) {
@@ -1661,6 +1695,9 @@ class Edition extends DataClass implements Insertable<Edition> {
       coverUrl: coverUrl == null && nullToAbsent
           ? const Value.absent()
           : Value(coverUrl),
+      coverImagePath: coverImagePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coverImagePath),
       coverColorIndex: Value(coverColorIndex),
       dimensions: dimensions == null && nullToAbsent
           ? const Value.absent()
@@ -1697,6 +1734,7 @@ class Edition extends DataClass implements Insertable<Edition> {
       editionName: serializer.fromJson<String?>(json['editionName']),
       pageCount: serializer.fromJson<int?>(json['pageCount']),
       coverUrl: serializer.fromJson<String?>(json['coverUrl']),
+      coverImagePath: serializer.fromJson<String?>(json['coverImagePath']),
       coverColorIndex: serializer.fromJson<int>(json['coverColorIndex']),
       dimensions: serializer.fromJson<String?>(json['dimensions']),
       weightGrams: serializer.fromJson<double?>(json['weightGrams']),
@@ -1724,6 +1762,7 @@ class Edition extends DataClass implements Insertable<Edition> {
       'editionName': serializer.toJson<String?>(editionName),
       'pageCount': serializer.toJson<int?>(pageCount),
       'coverUrl': serializer.toJson<String?>(coverUrl),
+      'coverImagePath': serializer.toJson<String?>(coverImagePath),
       'coverColorIndex': serializer.toJson<int>(coverColorIndex),
       'dimensions': serializer.toJson<String?>(dimensions),
       'weightGrams': serializer.toJson<double?>(weightGrams),
@@ -1749,6 +1788,7 @@ class Edition extends DataClass implements Insertable<Edition> {
     Value<String?> editionName = const Value.absent(),
     Value<int?> pageCount = const Value.absent(),
     Value<String?> coverUrl = const Value.absent(),
+    Value<String?> coverImagePath = const Value.absent(),
     int? coverColorIndex,
     Value<String?> dimensions = const Value.absent(),
     Value<double?> weightGrams = const Value.absent(),
@@ -1773,6 +1813,9 @@ class Edition extends DataClass implements Insertable<Edition> {
     editionName: editionName.present ? editionName.value : this.editionName,
     pageCount: pageCount.present ? pageCount.value : this.pageCount,
     coverUrl: coverUrl.present ? coverUrl.value : this.coverUrl,
+    coverImagePath: coverImagePath.present
+        ? coverImagePath.value
+        : this.coverImagePath,
     coverColorIndex: coverColorIndex ?? this.coverColorIndex,
     dimensions: dimensions.present ? dimensions.value : this.dimensions,
     weightGrams: weightGrams.present ? weightGrams.value : this.weightGrams,
@@ -1801,6 +1844,9 @@ class Edition extends DataClass implements Insertable<Edition> {
           : this.editionName,
       pageCount: data.pageCount.present ? data.pageCount.value : this.pageCount,
       coverUrl: data.coverUrl.present ? data.coverUrl.value : this.coverUrl,
+      coverImagePath: data.coverImagePath.present
+          ? data.coverImagePath.value
+          : this.coverImagePath,
       coverColorIndex: data.coverColorIndex.present
           ? data.coverColorIndex.value
           : this.coverColorIndex,
@@ -1836,6 +1882,7 @@ class Edition extends DataClass implements Insertable<Edition> {
           ..write('editionName: $editionName, ')
           ..write('pageCount: $pageCount, ')
           ..write('coverUrl: $coverUrl, ')
+          ..write('coverImagePath: $coverImagePath, ')
           ..write('coverColorIndex: $coverColorIndex, ')
           ..write('dimensions: $dimensions, ')
           ..write('weightGrams: $weightGrams, ')
@@ -1861,6 +1908,7 @@ class Edition extends DataClass implements Insertable<Edition> {
     editionName,
     pageCount,
     coverUrl,
+    coverImagePath,
     coverColorIndex,
     dimensions,
     weightGrams,
@@ -1885,6 +1933,7 @@ class Edition extends DataClass implements Insertable<Edition> {
           other.editionName == this.editionName &&
           other.pageCount == this.pageCount &&
           other.coverUrl == this.coverUrl &&
+          other.coverImagePath == this.coverImagePath &&
           other.coverColorIndex == this.coverColorIndex &&
           other.dimensions == this.dimensions &&
           other.weightGrams == this.weightGrams &&
@@ -1907,6 +1956,7 @@ class EditionsCompanion extends UpdateCompanion<Edition> {
   final Value<String?> editionName;
   final Value<int?> pageCount;
   final Value<String?> coverUrl;
+  final Value<String?> coverImagePath;
   final Value<int> coverColorIndex;
   final Value<String?> dimensions;
   final Value<double?> weightGrams;
@@ -1928,6 +1978,7 @@ class EditionsCompanion extends UpdateCompanion<Edition> {
     this.editionName = const Value.absent(),
     this.pageCount = const Value.absent(),
     this.coverUrl = const Value.absent(),
+    this.coverImagePath = const Value.absent(),
     this.coverColorIndex = const Value.absent(),
     this.dimensions = const Value.absent(),
     this.weightGrams = const Value.absent(),
@@ -1950,6 +2001,7 @@ class EditionsCompanion extends UpdateCompanion<Edition> {
     this.editionName = const Value.absent(),
     this.pageCount = const Value.absent(),
     this.coverUrl = const Value.absent(),
+    this.coverImagePath = const Value.absent(),
     this.coverColorIndex = const Value.absent(),
     this.dimensions = const Value.absent(),
     this.weightGrams = const Value.absent(),
@@ -1975,6 +2027,7 @@ class EditionsCompanion extends UpdateCompanion<Edition> {
     Expression<String>? editionName,
     Expression<int>? pageCount,
     Expression<String>? coverUrl,
+    Expression<String>? coverImagePath,
     Expression<int>? coverColorIndex,
     Expression<String>? dimensions,
     Expression<double>? weightGrams,
@@ -1997,6 +2050,7 @@ class EditionsCompanion extends UpdateCompanion<Edition> {
       if (editionName != null) 'edition_name': editionName,
       if (pageCount != null) 'page_count': pageCount,
       if (coverUrl != null) 'cover_url': coverUrl,
+      if (coverImagePath != null) 'cover_image_path': coverImagePath,
       if (coverColorIndex != null) 'cover_color_index': coverColorIndex,
       if (dimensions != null) 'dimensions': dimensions,
       if (weightGrams != null) 'weight_grams': weightGrams,
@@ -2021,6 +2075,7 @@ class EditionsCompanion extends UpdateCompanion<Edition> {
     Value<String?>? editionName,
     Value<int?>? pageCount,
     Value<String?>? coverUrl,
+    Value<String?>? coverImagePath,
     Value<int>? coverColorIndex,
     Value<String?>? dimensions,
     Value<double?>? weightGrams,
@@ -2043,6 +2098,7 @@ class EditionsCompanion extends UpdateCompanion<Edition> {
       editionName: editionName ?? this.editionName,
       pageCount: pageCount ?? this.pageCount,
       coverUrl: coverUrl ?? this.coverUrl,
+      coverImagePath: coverImagePath ?? this.coverImagePath,
       coverColorIndex: coverColorIndex ?? this.coverColorIndex,
       dimensions: dimensions ?? this.dimensions,
       weightGrams: weightGrams ?? this.weightGrams,
@@ -2093,6 +2149,9 @@ class EditionsCompanion extends UpdateCompanion<Edition> {
     if (coverUrl.present) {
       map['cover_url'] = Variable<String>(coverUrl.value);
     }
+    if (coverImagePath.present) {
+      map['cover_image_path'] = Variable<String>(coverImagePath.value);
+    }
     if (coverColorIndex.present) {
       map['cover_color_index'] = Variable<int>(coverColorIndex.value);
     }
@@ -2137,6 +2196,7 @@ class EditionsCompanion extends UpdateCompanion<Edition> {
           ..write('editionName: $editionName, ')
           ..write('pageCount: $pageCount, ')
           ..write('coverUrl: $coverUrl, ')
+          ..write('coverImagePath: $coverImagePath, ')
           ..write('coverColorIndex: $coverColorIndex, ')
           ..write('dimensions: $dimensions, ')
           ..write('weightGrams: $weightGrams, ')
@@ -5914,6 +5974,7 @@ typedef $$EditionsTableCreateCompanionBuilder =
       Value<String?> editionName,
       Value<int?> pageCount,
       Value<String?> coverUrl,
+      Value<String?> coverImagePath,
       Value<int> coverColorIndex,
       Value<String?> dimensions,
       Value<double?> weightGrams,
@@ -5937,6 +5998,7 @@ typedef $$EditionsTableUpdateCompanionBuilder =
       Value<String?> editionName,
       Value<int?> pageCount,
       Value<String?> coverUrl,
+      Value<String?> coverImagePath,
       Value<int> coverColorIndex,
       Value<String?> dimensions,
       Value<double?> weightGrams,
@@ -6049,6 +6111,11 @@ class $$EditionsTableFilterComposer
 
   ColumnFilters<String> get coverUrl => $composableBuilder(
     column: $table.coverUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get coverImagePath => $composableBuilder(
+    column: $table.coverImagePath,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6201,6 +6268,11 @@ class $$EditionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get coverImagePath => $composableBuilder(
+    column: $table.coverImagePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get coverColorIndex => $composableBuilder(
     column: $table.coverColorIndex,
     builder: (column) => ColumnOrderings(column),
@@ -6307,6 +6379,11 @@ class $$EditionsTableAnnotationComposer
 
   GeneratedColumn<String> get coverUrl =>
       $composableBuilder(column: $table.coverUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get coverImagePath => $composableBuilder(
+    column: $table.coverImagePath,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get coverColorIndex => $composableBuilder(
     column: $table.coverColorIndex,
@@ -6429,6 +6506,7 @@ class $$EditionsTableTableManager
                 Value<String?> editionName = const Value.absent(),
                 Value<int?> pageCount = const Value.absent(),
                 Value<String?> coverUrl = const Value.absent(),
+                Value<String?> coverImagePath = const Value.absent(),
                 Value<int> coverColorIndex = const Value.absent(),
                 Value<String?> dimensions = const Value.absent(),
                 Value<double?> weightGrams = const Value.absent(),
@@ -6450,6 +6528,7 @@ class $$EditionsTableTableManager
                 editionName: editionName,
                 pageCount: pageCount,
                 coverUrl: coverUrl,
+                coverImagePath: coverImagePath,
                 coverColorIndex: coverColorIndex,
                 dimensions: dimensions,
                 weightGrams: weightGrams,
@@ -6473,6 +6552,7 @@ class $$EditionsTableTableManager
                 Value<String?> editionName = const Value.absent(),
                 Value<int?> pageCount = const Value.absent(),
                 Value<String?> coverUrl = const Value.absent(),
+                Value<String?> coverImagePath = const Value.absent(),
                 Value<int> coverColorIndex = const Value.absent(),
                 Value<String?> dimensions = const Value.absent(),
                 Value<double?> weightGrams = const Value.absent(),
@@ -6494,6 +6574,7 @@ class $$EditionsTableTableManager
                 editionName: editionName,
                 pageCount: pageCount,
                 coverUrl: coverUrl,
+                coverImagePath: coverImagePath,
                 coverColorIndex: coverColorIndex,
                 dimensions: dimensions,
                 weightGrams: weightGrams,

@@ -65,6 +65,10 @@ class Editions extends Table {
   TextColumn get editionName => text().nullable()();
   IntColumn get pageCount => integer().nullable()();
   TextColumn get coverUrl => text().nullable()();
+  /// A cover the user photographed or picked themselves, stored in the app's
+  /// own directory. Takes precedence over [coverUrl]: if someone went to the
+  /// trouble of photographing their copy, that is the cover they want to see.
+  TextColumn get coverImagePath => text().nullable()();
   /// Index into the cover placeholder palette, so a missing cover still gets a
   /// stable colour across restarts.
   IntColumn get coverColorIndex => integer().withDefault(const Constant(0))();

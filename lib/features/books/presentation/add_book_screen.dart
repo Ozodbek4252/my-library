@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/routing/routes.dart';
@@ -15,6 +18,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/book_cover.dart';
 import '../../../core/widgets/layout.dart';
 import '../../../core/widgets/pills.dart';
+import '../../../data/local/image_store.dart';
 import '../../../data/metadata/book_metadata.dart';
 import '../../../data/repositories/collection_mutations.dart';
 import '../../../domain/models/book_draft.dart';
@@ -65,6 +69,12 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
   bool _loading = true;
   bool _saving = false;
   bool _lookingUp = false;
+  bool _pickingCover = false;
+
+  /// Covers written during this edit that were then replaced or removed. They
+  /// are only deleted once the user saves, so cancelling leaves the original
+  /// file untouched.
+  final _discardedCovers = <String>[];
 
   bool get _isEditing => widget.draft?.workId != null;
 
@@ -202,6 +212,12 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
     setState(() => _saving = true);
     final db = ref.read(databaseProvider);
 
+    // The edit is going through, so the covers it replaced are now orphans.
+    for (final path in _discardedCovers) {
+      unawaited(const ImageStore().delete(path));
+    }
+    _discardedCovers.clear();
+
     try {
       if (_isEditing) {
         await db.saveDraft(_draft);
@@ -235,6 +251,101 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
       if (!mounted) return;
       setState(() => _saving = false);
       AppToast.show(context, "Couldn't save this book", success: false);
+    }
+  }
+
+  /// A manually entered book has no cover to fetch, so the user supplies one.
+  /// The picked file lives in a cache the system may clear, so it is copied
+  /// into the app's own storage before it is recorded.
+  Future<void> _pickCover() async {
+    final existing = _draft.coverImagePath;
+
+    final action = await showAppSheet<_CoverAction>(
+      context,
+      builder: (sheetContext) => AppSheet(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Cover', style: AppText.sheetTitle),
+            const SizedBox(height: 6),
+            Text(
+              'Photograph the book, or pick a picture you already have.',
+              style: AppText.sans(
+                size: 13,
+                height: 1.5,
+                color: AppColors.muted,
+              ),
+            ),
+            const SizedBox(height: 16),
+            PrimaryButton(
+              label: 'Take a photo',
+              onPressed: () =>
+                  Navigator.of(sheetContext).pop(_CoverAction.camera),
+            ),
+            const SizedBox(height: 9),
+            SecondaryButton(
+              label: 'Choose a picture',
+              height: 50,
+              fontSize: 15,
+              onPressed: () =>
+                  Navigator.of(sheetContext).pop(_CoverAction.gallery),
+            ),
+            if (existing != null && existing.isNotEmpty) ...[
+              const SizedBox(height: 9),
+              DestructiveButton(
+                label: 'Remove cover',
+                onPressed: () =>
+                    Navigator.of(sheetContext).pop(_CoverAction.remove),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+
+    if (action == null || !mounted) return;
+
+    if (action == _CoverAction.remove) {
+      setState(() {
+        if (existing != null) _discardedCovers.add(existing);
+        _draft.coverImagePath = null;
+      });
+      return;
+    }
+
+    setState(() => _pickingCover = true);
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: action == _CoverAction.camera
+            ? ImageSource.camera
+            : ImageSource.gallery,
+        maxWidth: 1400,
+        imageQuality: 88,
+      );
+      if (picked == null || !mounted) return;
+
+      final stored = await const ImageStore().save(picked.path);
+      if (!mounted) return;
+
+      setState(() {
+        if (existing != null && existing.isNotEmpty) {
+          _discardedCovers.add(existing);
+        }
+        _draft.coverImagePath = stored;
+        // A picture the user chose outranks whatever a provider supplied.
+        _draft.coverUrl = null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      AppToast.show(
+        context,
+        action == _CoverAction.camera
+            ? "Couldn't open the camera"
+            : "Couldn't open your pictures",
+        success: false,
+      );
+    } finally {
+      if (mounted) setState(() => _pickingCover = false);
     }
   }
 
@@ -332,7 +443,12 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
               saveEnabled: !_saving,
             ),
             const SizedBox(height: 22),
-            _CoverRow(draft: _draft, isEditing: _isEditing),
+            _CoverRow(
+              draft: _draft,
+              isEditing: _isEditing,
+              busy: _pickingCover,
+              onPickCover: _pickCover,
+            ),
             const SectionLabel('The book'),
             PaperCard(
               children: [
@@ -490,53 +606,104 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
   }
 }
 
+enum _CoverAction { camera, gallery, remove }
+
 class _CoverRow extends StatelessWidget {
-  const _CoverRow({required this.draft, required this.isEditing});
+  const _CoverRow({
+    required this.draft,
+    required this.isEditing,
+    required this.busy,
+    required this.onPickCover,
+  });
 
   final BookDraft draft;
   final bool isEditing;
+  final bool busy;
+  final VoidCallback onPickCover;
 
   @override
   Widget build(BuildContext context) {
+    final hasCover = (draft.coverImagePath ?? '').isNotEmpty ||
+        (draft.coverUrl ?? '').isNotEmpty;
+
     return Row(
       children: [
-        if (draft.title.trim().isEmpty && draft.coverUrl == null)
-          SizedBox(
+        GestureDetector(
+          onTap: busy ? null : onPickCover,
+          child: SizedBox(
             width: 76,
             height: 114,
-            child: CustomPaint(
-              painter: const DashedBorderPainter(radius: AppRadius.cover),
-              child: const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AppIcon(AppIcons.image, size: 18, color: AppColors.faint),
-                  SizedBox(height: 5),
-                  Text(
-                    'Cover',
-                    style: TextStyle(fontSize: 9.5, color: AppColors.faint),
-                  ),
-                ],
-              ),
-            ),
-          )
-        else
-          BookCover(
-            title: draft.title,
-            author: draft.authors.isEmpty ? null : draft.authors.first,
-            colorIndex: draft.coverColorIndex,
-            coverUrl: draft.coverUrl,
-            width: 76,
-            height: 114,
-            titleSize: 12,
-            authorSize: 6.5,
-            spineWidth: 5,
+            child: busy
+                ? const Center(
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.accent,
+                      ),
+                    ),
+                  )
+                : hasCover
+                    ? BookCover(
+                        title: draft.title,
+                        author: draft.authors.isEmpty
+                            ? null
+                            : draft.authors.first,
+                        colorIndex: draft.coverColorIndex,
+                        coverUrl: draft.coverUrl,
+                        coverImagePath: draft.coverImagePath,
+                        width: 76,
+                        height: 114,
+                        titleSize: 12,
+                        authorSize: 6.5,
+                        spineWidth: 5,
+                      )
+                    : draft.title.trim().isEmpty
+                        ? const CustomPaint(
+                            painter: DashedBorderPainter(
+                              radius: AppRadius.cover,
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                AppIcon(
+                                  AppIcons.image,
+                                  size: 18,
+                                  color: AppColors.faint,
+                                ),
+                                SizedBox(height: 5),
+                                Text(
+                                  'Cover',
+                                  style: TextStyle(
+                                    fontSize: 9.5,
+                                    color: AppColors.faint,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : BookCover(
+                            title: draft.title,
+                            author: draft.authors.isEmpty
+                                ? null
+                                : draft.authors.first,
+                            colorIndex: draft.coverColorIndex,
+                            width: 76,
+                            height: 114,
+                            titleSize: 12,
+                            authorSize: 6.5,
+                            spineWidth: 5,
+                          ),
           ),
+        ),
         const SizedBox(width: 14),
         Expanded(
           child: isEditing
               ? Text(
-                  'Changes here apply to the book and the edition shown on its '
-                  'details screen. Purchase details live on the copy.',
+                  'Tap the cover to photograph this edition. Changes here apply '
+                  'to the book and the edition shown on its details screen; '
+                  'purchase details live on the copy.',
                   style: AppText.sans(
                     size: 12.5,
                     height: 1.5,
@@ -547,7 +714,8 @@ class _CoverRow extends StatelessWidget {
                   TextSpan(
                     children: [
                       const TextSpan(
-                        text: 'Scanning fills every field below automatically. ',
+                        text: 'Tap the cover to photograph the book. Scanning '
+                            'fills every field below automatically. ',
                       ),
                       WidgetSpan(
                         alignment: PlaceholderAlignment.middle,

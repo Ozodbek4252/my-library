@@ -23,10 +23,17 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'book_collection'));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (m, from, to) async {
+          // v2 added a user-supplied cover to editions. Existing libraries keep
+          // every book they already had.
+          if (from < 2) {
+            await m.addColumn(editions, editions.coverImagePath);
+          }
+        },
         beforeOpen: (details) async {
           // Required for the ON DELETE CASCADE rules above to actually fire.
           await customStatement('PRAGMA foreign_keys = ON');

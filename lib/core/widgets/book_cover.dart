@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -16,6 +18,7 @@ class BookCover extends StatelessWidget {
     this.author,
     this.colorIndex = 0,
     this.coverUrl,
+    this.coverImagePath,
     this.width,
     this.height,
     this.aspectRatio = 2 / 3,
@@ -34,6 +37,10 @@ class BookCover extends StatelessWidget {
   final String? author;
   final int colorIndex;
   final String? coverUrl;
+
+  /// A cover the user supplied. Shown ahead of [coverUrl] — someone who
+  /// photographed their own copy meant to see that photograph.
+  final String? coverImagePath;
 
   final double? width;
   final double? height;
@@ -69,6 +76,7 @@ class BookCover extends StatelessWidget {
           author: author,
           palette: _palette,
           coverUrl: coverUrl,
+          coverImagePath: coverImagePath,
           radius: radius,
           titleSize: titleSize ?? (w * .145).clamp(7.0, 20.0),
           authorSize: authorSize ?? (w * .065).clamp(5.5, 8.0),
@@ -107,6 +115,7 @@ class _CoverSurface extends StatelessWidget {
     required this.author,
     required this.palette,
     required this.coverUrl,
+    required this.coverImagePath,
     required this.radius,
     required this.titleSize,
     required this.authorSize,
@@ -121,6 +130,7 @@ class _CoverSurface extends StatelessWidget {
   final String? author;
   final (Color, Color) palette;
   final String? coverUrl;
+  final String? coverImagePath;
   final double radius;
   final double titleSize;
   final double authorSize;
@@ -133,12 +143,21 @@ class _CoverSurface extends StatelessWidget {
   Widget build(BuildContext context) {
     final (background, foreground) = palette;
     final url = coverUrl;
+    final localPath = coverImagePath;
 
     return Stack(
       fit: StackFit.expand,
       children: [
         ColoredBox(color: background),
-        if (url != null && url.isNotEmpty)
+        if (localPath != null && localPath.isNotEmpty)
+          Image.file(
+            File(localPath),
+            fit: BoxFit.cover,
+            // A photo whose file has gone falls back to the placeholder rather
+            // than to a broken-image icon.
+            errorBuilder: (context, _, _) => _placeholder(foreground),
+          )
+        else if (url != null && url.isNotEmpty)
           CachedNetworkImage(
             imageUrl: url,
             fit: BoxFit.cover,

@@ -29,6 +29,7 @@ class BookDraft {
     this.editionName,
     this.pageCount,
     this.coverUrl,
+    this.coverImagePath,
     this.coverColorIndex = 0,
     this.dimensions,
     this.weightGrams,
@@ -67,6 +68,9 @@ class BookDraft {
   String? editionName;
   int? pageCount;
   String? coverUrl;
+
+  /// A cover the user photographed or picked, stored by [ImageStore].
+  String? coverImagePath;
   int coverColorIndex;
   String? dimensions;
   double? weightGrams;
@@ -144,6 +148,7 @@ class BookDraft {
         editionName: editionName,
         pageCount: pageCount,
         coverUrl: coverUrl,
+        coverImagePath: coverImagePath,
         coverColorIndex: coverColorIndex,
         dimensions: dimensions,
         weightGrams: weightGrams,
@@ -183,6 +188,7 @@ class BookDraft {
         editionName: edition?.editionName,
         pageCount: edition?.pageCount,
         coverUrl: edition?.coverUrl,
+        coverImagePath: edition?.coverImagePath,
         coverColorIndex: edition?.coverColorIndex ?? 0,
         dimensions: edition?.dimensions,
         weightGrams: edition?.weightGrams,

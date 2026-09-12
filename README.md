@@ -37,7 +37,8 @@ lib/
 ```
 
 - **Persistence** — Drift over SQLite. Relational, indexed, and queried in SQL so
-  filtering, searching and sorting stay fast on a large collection.
+  filtering, searching and sorting stay fast on a large collection. Schema
+  changes ship as migrations; existing libraries are never rebuilt.
 - **State** — Riverpod. Repositories expose streams; widgets never touch the
   database.
 - **Navigation** — go_router with a `StatefulShellRoute` for the four tabs. Scan
@@ -50,6 +51,21 @@ lib/
   2. **`LocalCatalogSource`** — a bundled catalogue, so the sample library and
      the bookstore flow work with no signal at all.
   3. **`OpenLibrarySource`** — everything else.
+
+## Covers
+
+An edition can have a cover from three places, in this order:
+
+1. **A picture the user supplied** — tap the cover on the Add or Edit screen to
+   photograph the book or pick an image. This is the answer for a book with no
+   barcode, where no provider has anything to offer.
+2. **A cover URL** from the lookup service, cached on device.
+3. **The typographic placeholder** — a coloured block with the title and author,
+   used whenever there is no artwork and whenever an image fails to load.
+
+Picked images are copied out of the system cache into the app's own directory,
+because the picker hands back a file the system may delete. Replaced and removed
+covers are cleaned up on save, and a deleted edition takes its cover with it.
 
 ## The lookup service
 

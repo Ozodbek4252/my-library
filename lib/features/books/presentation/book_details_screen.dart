@@ -21,6 +21,7 @@ import '../../../core/widgets/layout.dart';
 import '../../../core/widgets/pills.dart';
 import '../../../core/widgets/states.dart';
 import '../../../data/local/database.dart';
+import '../../../data/local/image_store.dart';
 import '../../../data/repositories/collection_mutations.dart';
 import '../../../domain/models/enums.dart';
 import '../../../domain/models/library_models.dart';
@@ -258,6 +259,7 @@ class _Hero extends ConsumerWidget {
                 author: Fmt.surname(work.authors),
                 colorIndex: colorIndex,
                 coverUrl: edition?.coverUrl,
+                coverImagePath: edition?.coverImagePath,
                 width: 108,
                 height: 162,
                 titleSize: 17,
@@ -463,6 +465,12 @@ Future<void> confirmRemoveCopy(
   if (!confirmed || !context.mounted) return;
 
   final result = await ref.read(databaseProvider).removeCopy(target.id);
+
+  // A cover the user photographed belongs to the edition; once the edition is
+  // gone the file is an orphan.
+  if (result.removedEdition) {
+    await const ImageStore().delete(edition.coverImagePath);
+  }
   if (!context.mounted) return;
 
   AppToast.show(context, result.toastMessage);
