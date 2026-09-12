@@ -50,7 +50,24 @@ void main() {
     });
   });
 
-  test('display formats an ISBN the way the design shows it', () {
-    expect(Isbn.display('9780141036144'), '978-0-141-03614-4');
+  group('Isbn.display', () {
+    test('splits at the registration group, whatever its length', () {
+      // 0 is the English group — one digit.
+      expect(Isbn.display('9780141036144'), '978-0-14103614-4');
+      // 9943 is Uzbekistan — four digits. A fixed split would mangle it.
+      expect(Isbn.display('9789943231634'), '978-9943-23163-4');
+      // 5 is the Russian group.
+      expect(Isbn.display('9785961426625'), '978-5-96142662-5');
+      // 88 is Italy — two digits.
+      expect(Isbn.display('9788806221768'), '978-88-0622176-8');
+    });
+
+    test('handles ISBN-10 the same way', () {
+      expect(Isbn.display('0141036141'), '0-14103614-1');
+    });
+
+    test('leaves anything it cannot place alone', () {
+      expect(Isbn.display('12345'), '12345');
+    });
   });
 }

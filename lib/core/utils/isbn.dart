@@ -65,18 +65,66 @@ abstract final class Isbn {
     return '$core${remainder == 10 ? 'X' : remainder}';
   }
 
-  /// Formats an ISBN-13 for display as the design shows it.
+  /// Formats an ISBN for display, split at its registration group.
+  ///
+  /// The group is what identifies the country or language area — `0` for
+  /// English, `5` for Russian, `9943` for Uzbekistan — and its length is
+  /// determined by the leading digits. Splitting at a fixed position instead
+  /// renders every non-English ISBN wrongly, which matters in an app built
+  /// around Uzbek books.
+  ///
+  /// Separating the registrant from the publication number needs the full ISBN
+  /// range table, so those two stay together rather than being guessed at.
   static String display(String raw) {
     final v = normalize(raw);
+
     if (v.length == 13) {
-      return '${v.substring(0, 3)}-${v.substring(3, 4)}-${v.substring(4, 7)}'
-          '-${v.substring(7, 12)}-${v.substring(12)}';
+      final prefix = v.substring(0, 3);
+      final rest = v.substring(3);
+      final groupLength = _groupLength(rest);
+      if (groupLength == null) return v;
+      return '$prefix-${rest.substring(0, groupLength)}'
+          '-${rest.substring(groupLength, rest.length - 1)}'
+          '-${rest.substring(rest.length - 1)}';
     }
+
     if (v.length == 10) {
-      return '${v.substring(0, 1)}-${v.substring(1, 4)}'
-          '-${v.substring(4, 9)}-${v.substring(9)}';
+      final groupLength = _groupLength(v);
+      if (groupLength == null) return v;
+      return '${v.substring(0, groupLength)}'
+          '-${v.substring(groupLength, v.length - 1)}'
+          '-${v.substring(v.length - 1)}';
     }
+
     return raw;
+  }
+
+  /// How many digits the registration group takes, from the official ranges.
+  static int? _groupLength(String digits) {
+    if (digits.length < 6) return null;
+
+    final one = int.tryParse(digits.substring(0, 1));
+    final two = int.tryParse(digits.substring(0, 2));
+    final three = int.tryParse(digits.substring(0, 3));
+    final four = int.tryParse(digits.substring(0, 4));
+    final five = int.tryParse(digits.substring(0, 5));
+    if (one == null ||
+        two == null ||
+        three == null ||
+        four == null ||
+        five == null) {
+      return null;
+    }
+
+    if (one <= 5) return 1;
+    if (three >= 600 && three <= 649) return 3;
+    if (two == 65) return 2;
+    if (one == 7) return 1;
+    if (two >= 80 && two <= 94) return 2;
+    if (three >= 950 && three <= 989) return 3;
+    if (four >= 9900 && four <= 9989) return 4;
+    if (five >= 99900 && five <= 99999) return 5;
+    return null;
   }
 
   /// Barcode payloads on books are EAN-13 in the 978/979 bookland range. A
