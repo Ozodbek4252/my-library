@@ -10,6 +10,7 @@ import '../../../core/theme/typography.dart';
 import '../../../core/utils/isbn.dart';
 import '../../../core/widgets/app_buttons.dart';
 import '../../../core/widgets/app_icons.dart';
+import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/book_cover.dart';
 import '../../../core/widgets/layout.dart';
@@ -27,6 +28,7 @@ class AddBookArgs {
     this.existingWorkId,
     this.workId,
     this.initialIsbn,
+    this.unknownToProviders = false,
   });
 
   /// Fields already known — from a scan or from the work being extended.
@@ -40,6 +42,10 @@ class AddBookArgs {
 
   /// Pre-filled ISBN from manual entry in the scanner.
   final String? initialIsbn;
+
+  /// True when a lookup already came back empty for this ISBN, so the book is
+  /// worth offering back to the shared database once the user has typed it in.
+  final bool unknownToProviders;
 }
 
 /// Manual entry, and the editor for a book already in the library. The two are
@@ -224,10 +230,60 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
                 : 'Added to your library',
       );
       context.pop();
+      await _offerToShare();
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
       AppToast.show(context, "Couldn't save this book", success: false);
+    }
+  }
+
+  /// A book nobody could look up is worth sending back to the shared database
+  /// — but it is the user's text, so it is never sent without asking.
+  Future<void> _offerToShare() async {
+    if (!(widget.draft?.unknownToProviders ?? false)) return;
+
+    final scraper = ref.read(bookScraperSourceProvider);
+    if (scraper == null || !scraper.isConfigured) return;
+
+    final isbn = _draft.isbn13 ?? _draft.isbn10;
+    if (isbn == null || !Isbn.isValid(isbn)) return;
+    if (!mounted) return;
+
+    final share = await showConfirmDialog(
+      context,
+      title: 'Share this book?',
+      message: 'No lookup service knows ${Isbn.display(isbn)}. Sending the '
+          'title, author and edition details you just entered would let the '
+          'next person scanning this book find it. Your own notes, purchase '
+          'details and shelves are never sent.',
+      confirmLabel: 'Share it',
+      cancelLabel: 'Keep it to myself',
+      destructive: false,
+    );
+    if (!share || !mounted) return;
+
+    try {
+      final message = await scraper.suggest(
+        title: _draft.title,
+        isbn: isbn,
+        authors: _draft.authors,
+        publisher: _draft.publisher,
+        publishedYear: _draft.publishedYear,
+        pages: _draft.pageCount,
+        language: _draft.language,
+        description: _draft.description,
+      );
+      if (mounted) AppToast.show(context, message);
+    } on MetadataException catch (e) {
+      if (!mounted) return;
+      AppToast.show(
+        context,
+        e.failure == MetadataFailure.network
+            ? "Couldn't reach the book database — your book is saved anyway"
+            : e.message ?? "The book database wouldn't accept it",
+        success: false,
+      );
     }
   }
 

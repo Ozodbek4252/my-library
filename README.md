@@ -42,9 +42,48 @@ lib/
   database.
 - **Navigation** — go_router with a `StatefulShellRoute` for the four tabs. Scan
   is pushed over the shell, because the design hides the nav there.
-- **Book metadata** — everything goes through `BookMetadataRepository`. A
-  bundled catalogue answers first (instant, works with no signal), Open Library
-  fills the gaps. The UI cannot tell which one answered.
+- **Book metadata** — everything goes through `BookMetadataRepository`, and the
+  UI cannot tell which provider answered. Three are chained, in order:
+
+  1. **`BookScraperSource`** — the project's own Laravel service, which holds
+     the Uzbek ISBNs the global providers do not have.
+  2. **`LocalCatalogSource`** — a bundled catalogue, so the sample library and
+     the bookstore flow work with no signal at all.
+  3. **`OpenLibrarySource`** — everything else.
+
+## The lookup service
+
+The app talks to the `book-scraper` API, which exposes three endpoints:
+
+| Endpoint | Used for |
+| --- | --- |
+| `GET /api/v1/books/{isbn}` | The barcode scan, and "Fill in from ISBN" on the editor |
+| `GET /api/v1/books?q=&per_page=` | "Search all editions" when a book is not on your shelves |
+| `POST /api/v1/books/suggestions` | A book no provider knows, offered back after you type it in |
+
+The base URL is a compile-time constant with a deployed default; override it for
+a local stack or another deployment:
+
+```sh
+flutter run --dart-define=BOOK_API_BASE_URL=http://192.168.1.20:8000
+flutter run --dart-define=BOOK_API_BASE_URL=          # switch the service off
+```
+
+With or without the `/api/v1` suffix both work. `BOOK_API_TOKEN` sets a Sanctum
+bearer token for when the service re-enables `auth:sanctum`.
+
+Two details the service dictates and the client handles:
+
+- Languages arrive as Uzbek names — `O'zbekcha`, `Ruscha`, `Inglizcha` — with
+  several different apostrophes. They are folded to one English name each so
+  filters and statistics group correctly; anything unrecognised passes through.
+- `404` means "no such book" and `422` means "bad check digit". Neither is a
+  transport failure, so neither stops the next provider from being tried.
+
+Suggestions are never sent without asking. When a scan finds nothing and you
+type the book in yourself, the app offers once to share the bibliographic
+fields — title, author, edition — and never your notes, purchase details or
+shelves.
 
 ## Running it
 

@@ -172,7 +172,14 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen>
           },
           onManual: () {
             Navigator.of(sheetContext).pop();
-            _enterManually(prefill: failure.isbn);
+            // A barcode that read fine but matched nothing does not need
+            // typing again — carry the ISBN into the editor instead.
+            if (failure.kind == ScanFailureKind.notFound &&
+                failure.isbn != null) {
+              _addByHand(failure.isbn!);
+            } else {
+              _enterManually(prefill: failure.isbn);
+            }
           },
         ),
       );
@@ -205,6 +212,18 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen>
     } catch (_) {
       // Not every camera has a torch; silently leave the button as it was.
     }
+  }
+
+  /// Opens the editor for an ISBN no provider could resolve. The scanner is
+  /// closed behind it, so "Cancel" lands back on the library rather than on a
+  /// camera the user has finished with.
+  void _addByHand(String isbn) {
+    if (!mounted) return;
+    context.pop();
+    context.push(
+      Routes.addBook,
+      extra: AddBookArgs(initialIsbn: isbn, unknownToProviders: true),
+    );
   }
 
   Future<void> _enterManually({String? prefill}) async {
