@@ -70,4 +70,30 @@ void main() {
       expect(Isbn.display('12345'), '12345');
     });
   });
+
+  /// The editor's scan button reads a barcode and writes the number into the
+  /// ISBN field, so whatever the camera produces has to survive that round
+  /// trip: barcode -> stored value -> displayed value -> parsed back.
+  group('scan-into-the-field round trip', () {
+    for (final barcode in [
+      '9789943231634', // Uzbek
+      '9780141036144', // English
+      '9785961426625', // Russian
+      '978014103614450799', // with an EAN-5 price add-on
+    ]) {
+      test('survives $barcode', () {
+        final captured = Isbn.fromBarcode(barcode);
+        expect(captured, isNotNull);
+
+        final shown = Isbn.display(captured!);
+        // What the user sees must parse back to exactly what was scanned.
+        expect(Isbn.normalize(shown), captured);
+        expect(Isbn.isValid(shown), isTrue);
+      });
+    }
+
+    test('a non-book barcode yields nothing to write into the field', () {
+      expect(Isbn.fromBarcode('4006381333931'), isNull);
+    });
+  });
 }

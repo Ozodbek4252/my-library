@@ -254,6 +254,18 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
     }
   }
 
+  /// Reads the ISBN off the book rather than making the user type thirteen
+  /// digits, then fills the rest of the form from it.
+  Future<void> _scanIsbn() async {
+    final isbn = await context.push<String>(Routes.scanIsbn);
+    if (isbn == null || !mounted) return;
+
+    _controller('isbn', '').text = Isbn.display(isbn);
+    _draft.isbnInput = isbn;
+    setState(() {});
+    await _lookupIsbn();
+  }
+
   /// A manually entered book has no cover to fetch, so the user supplies one.
   /// The picked file lives in a cache the system may clear, so it is copied
   /// into the app's own storage before it is recorded.
@@ -505,6 +517,7 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
                   hint: '978…',
                   keyboardType: TextInputType.number,
                   textCapitalization: TextCapitalization.none,
+                  trailing: _ScanIsbnButton(onTap: _scanIsbn),
                 ),
                 EditableFieldRow(
                   label: 'Language',
@@ -604,6 +617,38 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
       ),
     );
   }
+}
+
+/// The barcode button that sits in the ISBN row.
+class _ScanIsbnButton extends StatelessWidget {
+  const _ScanIsbnButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        button: true,
+        label: 'Scan the ISBN',
+        child: GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            width: 34,
+            height: 34,
+            margin: const EdgeInsets.only(left: 6),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.ink,
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: const AppIcon(
+              AppIcons.barcode,
+              size: 17,
+              color: AppColors.paper,
+            ),
+          ),
+        ),
+      );
 }
 
 enum _CoverAction { camera, gallery, remove }

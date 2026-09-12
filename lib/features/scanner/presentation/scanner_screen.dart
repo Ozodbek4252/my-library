@@ -23,7 +23,12 @@ import 'widgets/scanner_overlay.dart';
 /// The camera screen. Point at a barcode, get a verdict in one sheet, and
 /// carry on down the shelf with "Scan next".
 class ScannerScreen extends ConsumerStatefulWidget {
-  const ScannerScreen({super.key});
+  const ScannerScreen({super.key, this.captureOnly = false});
+
+  /// Reads a barcode and hands the ISBN back to whoever pushed this screen,
+  /// instead of looking the book up. Used by the editor, so a book being typed
+  /// in by hand does not need its thirteen digits typed too.
+  final bool captureOnly;
 
   @override
   ConsumerState<ScannerScreen> createState() => _ScannerScreenState();
@@ -140,6 +145,19 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen>
         .firstWhere((v) => v.isNotEmpty, orElse: () => '');
     if (raw.isEmpty) return;
 
+    if (widget.captureOnly) {
+      final isbn = Isbn.fromBarcode(raw);
+      if (isbn == null) {
+        // Not a book barcode. Keep scanning rather than closing on a failure.
+        return;
+      }
+      setState(() => _handling = true);
+      await _controller?.stop();
+      unawaited(HapticFeedback.mediumImpact());
+      if (mounted) context.pop(isbn);
+      return;
+    }
+
     await _resolve(raw, fromCamera: true);
   }
 
@@ -229,12 +247,19 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen>
   Future<void> _enterManually({String? prefill}) async {
     final isbn = await showAppSheet<String>(
       context,
-      builder: (_) => _ManualIsbnSheet(initial: prefill),
+      builder: (_) => _ManualIsbnSheet(
+        initial: prefill,
+        captureOnly: widget.captureOnly,
+      ),
     );
     if (!mounted) return;
 
     if (isbn == null) {
       if (_handling) _resume();
+      return;
+    }
+    if (widget.captureOnly) {
+      context.pop(isbn);
       return;
     }
     await _resolve(isbn, fromCamera: false);
@@ -260,6 +285,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen>
           switch (_cameraState) {
             _CameraState.ready => _ScannerChrome(
                 handling: _handling,
+                captureOnly: widget.captureOnly,
                 torchOn: _torchOn,
                 onClose: () => context.pop(),
                 onToggleTorch: _toggleTorch,
@@ -334,6 +360,7 @@ class _DarkScene extends StatelessWidget {
 class _ScannerChrome extends StatelessWidget {
   const _ScannerChrome({
     required this.handling,
+    required this.captureOnly,
     required this.torchOn,
     required this.onClose,
     required this.onToggleTorch,
@@ -342,6 +369,7 @@ class _ScannerChrome extends StatelessWidget {
   });
 
   final bool handling;
+  final bool captureOnly;
   final bool torchOn;
   final VoidCallback onClose;
   final VoidCallback onToggleTorch;
@@ -405,7 +433,7 @@ class _ScannerChrome extends StatelessWidget {
                           ),
                           const SizedBox(width: 10),
                           Text(
-                            'Looking it up…',
+                            captureOnly ? 'Got it' : 'Looking it up…',
                             style: AppText.sans(
                               size: 13.5,
                               weight: 500,
@@ -425,7 +453,9 @@ class _ScannerChrome extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    'Point at the barcode',
+                    captureOnly
+                        ? 'Scan the ISBN'
+                        : 'Point at the barcode',
                     style: AppText.serif(
                       size: 19,
                       color: AppColors.onboardingText,
@@ -433,7 +463,9 @@ class _ScannerChrome extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Usually on the back cover',
+                    captureOnly
+                        ? "We'll fill in the number for you"
+                        : 'Usually on the back cover',
                     style: AppText.sans(
                       size: 12.5,
                       color: const Color(0xFF8F857A),
@@ -473,16 +505,18 @@ class _ScannerChrome extends StatelessWidget {
               bottom: MediaQuery.paddingOf(context).bottom + 40,
               child: Row(
                 children: [
-                  Expanded(
-                    child: ScannerButton(
-                      label: 'Search by title',
-                      onTap: onSearch,
+                  if (!captureOnly) ...[
+                    Expanded(
+                      child: ScannerButton(
+                        label: 'Search by title',
+                        onTap: onSearch,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
+                    const SizedBox(width: 8),
+                  ],
                   Expanded(
                     child: ScannerButton(
-                      label: 'Enter manually',
+                      label: 'Type the number',
                       onTap: onManual,
                     ),
                   ),
@@ -642,9 +676,10 @@ class _CameraMessage extends StatelessWidget {
 
 /// Typing the 13 digits by hand — the escape hatch from every scanner failure.
 class _ManualIsbnSheet extends StatefulWidget {
-  const _ManualIsbnSheet({this.initial});
+  const _ManualIsbnSheet({this.initial, this.captureOnly = false});
 
   final String? initial;
+  final bool captureOnly;
 
   @override
   State<_ManualIsbnSheet> createState() => _ManualIsbnSheetState();
@@ -747,18 +782,25 @@ class _ManualIsbnSheetState extends State<_ManualIsbnSheet> {
               ),
             ],
             const SizedBox(height: 16),
-            PrimaryButton(label: 'Look it up', onPressed: _submit),
-            const SizedBox(height: 9),
-            SecondaryButton(
-              label: 'Add without an ISBN',
-              height: 50,
-              fontSize: 15,
-              onPressed: () {
-                Navigator.of(context).pop();
-                context.pop();
-                context.push(Routes.addBook, extra: const AddBookArgs());
-              },
+            PrimaryButton(
+              label: widget.captureOnly ? 'Use this number' : 'Look it up',
+              onPressed: _submit,
             ),
+            // In capture mode the editor is already open behind this screen;
+            // offering to open another one would only confuse.
+            if (!widget.captureOnly) ...[
+              const SizedBox(height: 9),
+              SecondaryButton(
+                label: 'Add without an ISBN',
+                height: 50,
+                fontSize: 15,
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  context.pop();
+                  context.push(Routes.addBook, extra: const AddBookArgs());
+                },
+              ),
+            ],
           ],
         ),
       ),

@@ -13,6 +13,9 @@ abstract final class Routes {
   // Presented over the shell, with the bottom nav hidden.
   static const search = '/search';
   static const scanner = '/scan';
+
+  /// Reads a barcode and returns the ISBN to the caller, without looking it up.
+  static const scanIsbn = '/scan/isbn';
   static const addBook = '/add';
   static const importExport = '/import';
 

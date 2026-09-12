@@ -20,6 +20,7 @@ class EditableFieldRow extends StatelessWidget {
     this.maxLines = 1,
     this.onChanged,
     this.textCapitalization = TextCapitalization.sentences,
+    this.trailing,
   });
 
   final String label;
@@ -32,6 +33,9 @@ class EditableFieldRow extends StatelessWidget {
   final int maxLines;
   final ValueChanged<String>? onChanged;
   final TextCapitalization textCapitalization;
+
+  /// An action that belongs to this field — scanning a barcode into it, say.
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -80,6 +84,7 @@ class EditableFieldRow extends StatelessWidget {
               ),
             ),
           ),
+          ?trailing,
         ],
       ),
     );

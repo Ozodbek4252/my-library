@@ -74,6 +74,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             _modalPage(const ScannerScreen(), state),
       ),
       GoRoute(
+        path: Routes.scanIsbn,
+        pageBuilder: (context, state) => _modalPage<String>(
+          const ScannerScreen(captureOnly: true),
+          state,
+        ),
+      ),
+      GoRoute(
         path: Routes.addBook,
         pageBuilder: (context, state) => _modalPage(
           AddBookScreen(draft: state.extra as AddBookArgs?),
