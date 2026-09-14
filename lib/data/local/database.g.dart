@@ -3773,6 +3773,17 @@ class $WishlistItemsTable extends WishlistItems
       'REFERENCES works (id) ON DELETE CASCADE',
     ),
   );
+  static const VerificationMeta _editionIdMeta = const VerificationMeta(
+    'editionId',
+  );
+  @override
+  late final GeneratedColumn<String> editionId = GeneratedColumn<String>(
+    'edition_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _desiredLanguageMeta = const VerificationMeta(
     'desiredLanguage',
   );
@@ -3842,6 +3853,7 @@ class $WishlistItemsTable extends WishlistItems
   List<GeneratedColumn> get $columns => [
     id,
     workId,
+    editionId,
     desiredLanguage,
     desiredFormat,
     desiredEdition,
@@ -3873,6 +3885,12 @@ class $WishlistItemsTable extends WishlistItems
       );
     } else if (isInserting) {
       context.missing(_workIdMeta);
+    }
+    if (data.containsKey('edition_id')) {
+      context.handle(
+        _editionIdMeta,
+        editionId.isAcceptableOrUnknown(data['edition_id']!, _editionIdMeta),
+      );
     }
     if (data.containsKey('desired_language')) {
       context.handle(
@@ -3938,6 +3956,10 @@ class $WishlistItemsTable extends WishlistItems
         DriftSqlType.string,
         data['${effectivePrefix}work_id'],
       )!,
+      editionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}edition_id'],
+      ),
       desiredLanguage: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}desired_language'],
@@ -3974,6 +3996,11 @@ class $WishlistItemsTable extends WishlistItems
 class WishlistItem extends DataClass implements Insertable<WishlistItem> {
   final String id;
   final String workId;
+
+  /// The exact edition wanted, when it is known — a scan captures an ISBN, a
+  /// cover and a page count, and throwing those away would mean asking for
+  /// them again the day the book is bought.
+  final String? editionId;
   final String? desiredLanguage;
   final String? desiredFormat;
   final String? desiredEdition;
@@ -3983,6 +4010,7 @@ class WishlistItem extends DataClass implements Insertable<WishlistItem> {
   const WishlistItem({
     required this.id,
     required this.workId,
+    this.editionId,
     this.desiredLanguage,
     this.desiredFormat,
     this.desiredEdition,
@@ -3995,6 +4023,9 @@ class WishlistItem extends DataClass implements Insertable<WishlistItem> {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['work_id'] = Variable<String>(workId);
+    if (!nullToAbsent || editionId != null) {
+      map['edition_id'] = Variable<String>(editionId);
+    }
     if (!nullToAbsent || desiredLanguage != null) {
       map['desired_language'] = Variable<String>(desiredLanguage);
     }
@@ -4016,6 +4047,9 @@ class WishlistItem extends DataClass implements Insertable<WishlistItem> {
     return WishlistItemsCompanion(
       id: Value(id),
       workId: Value(workId),
+      editionId: editionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(editionId),
       desiredLanguage: desiredLanguage == null && nullToAbsent
           ? const Value.absent()
           : Value(desiredLanguage),
@@ -4041,6 +4075,7 @@ class WishlistItem extends DataClass implements Insertable<WishlistItem> {
     return WishlistItem(
       id: serializer.fromJson<String>(json['id']),
       workId: serializer.fromJson<String>(json['workId']),
+      editionId: serializer.fromJson<String?>(json['editionId']),
       desiredLanguage: serializer.fromJson<String?>(json['desiredLanguage']),
       desiredFormat: serializer.fromJson<String?>(json['desiredFormat']),
       desiredEdition: serializer.fromJson<String?>(json['desiredEdition']),
@@ -4055,6 +4090,7 @@ class WishlistItem extends DataClass implements Insertable<WishlistItem> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'workId': serializer.toJson<String>(workId),
+      'editionId': serializer.toJson<String?>(editionId),
       'desiredLanguage': serializer.toJson<String?>(desiredLanguage),
       'desiredFormat': serializer.toJson<String?>(desiredFormat),
       'desiredEdition': serializer.toJson<String?>(desiredEdition),
@@ -4067,6 +4103,7 @@ class WishlistItem extends DataClass implements Insertable<WishlistItem> {
   WishlistItem copyWith({
     String? id,
     String? workId,
+    Value<String?> editionId = const Value.absent(),
     Value<String?> desiredLanguage = const Value.absent(),
     Value<String?> desiredFormat = const Value.absent(),
     Value<String?> desiredEdition = const Value.absent(),
@@ -4076,6 +4113,7 @@ class WishlistItem extends DataClass implements Insertable<WishlistItem> {
   }) => WishlistItem(
     id: id ?? this.id,
     workId: workId ?? this.workId,
+    editionId: editionId.present ? editionId.value : this.editionId,
     desiredLanguage: desiredLanguage.present
         ? desiredLanguage.value
         : this.desiredLanguage,
@@ -4093,6 +4131,7 @@ class WishlistItem extends DataClass implements Insertable<WishlistItem> {
     return WishlistItem(
       id: data.id.present ? data.id.value : this.id,
       workId: data.workId.present ? data.workId.value : this.workId,
+      editionId: data.editionId.present ? data.editionId.value : this.editionId,
       desiredLanguage: data.desiredLanguage.present
           ? data.desiredLanguage.value
           : this.desiredLanguage,
@@ -4113,6 +4152,7 @@ class WishlistItem extends DataClass implements Insertable<WishlistItem> {
     return (StringBuffer('WishlistItem(')
           ..write('id: $id, ')
           ..write('workId: $workId, ')
+          ..write('editionId: $editionId, ')
           ..write('desiredLanguage: $desiredLanguage, ')
           ..write('desiredFormat: $desiredFormat, ')
           ..write('desiredEdition: $desiredEdition, ')
@@ -4127,6 +4167,7 @@ class WishlistItem extends DataClass implements Insertable<WishlistItem> {
   int get hashCode => Object.hash(
     id,
     workId,
+    editionId,
     desiredLanguage,
     desiredFormat,
     desiredEdition,
@@ -4140,6 +4181,7 @@ class WishlistItem extends DataClass implements Insertable<WishlistItem> {
       (other is WishlistItem &&
           other.id == this.id &&
           other.workId == this.workId &&
+          other.editionId == this.editionId &&
           other.desiredLanguage == this.desiredLanguage &&
           other.desiredFormat == this.desiredFormat &&
           other.desiredEdition == this.desiredEdition &&
@@ -4151,6 +4193,7 @@ class WishlistItem extends DataClass implements Insertable<WishlistItem> {
 class WishlistItemsCompanion extends UpdateCompanion<WishlistItem> {
   final Value<String> id;
   final Value<String> workId;
+  final Value<String?> editionId;
   final Value<String?> desiredLanguage;
   final Value<String?> desiredFormat;
   final Value<String?> desiredEdition;
@@ -4161,6 +4204,7 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistItem> {
   const WishlistItemsCompanion({
     this.id = const Value.absent(),
     this.workId = const Value.absent(),
+    this.editionId = const Value.absent(),
     this.desiredLanguage = const Value.absent(),
     this.desiredFormat = const Value.absent(),
     this.desiredEdition = const Value.absent(),
@@ -4172,6 +4216,7 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistItem> {
   WishlistItemsCompanion.insert({
     required String id,
     required String workId,
+    this.editionId = const Value.absent(),
     this.desiredLanguage = const Value.absent(),
     this.desiredFormat = const Value.absent(),
     this.desiredEdition = const Value.absent(),
@@ -4185,6 +4230,7 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistItem> {
   static Insertable<WishlistItem> custom({
     Expression<String>? id,
     Expression<String>? workId,
+    Expression<String>? editionId,
     Expression<String>? desiredLanguage,
     Expression<String>? desiredFormat,
     Expression<String>? desiredEdition,
@@ -4196,6 +4242,7 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistItem> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (workId != null) 'work_id': workId,
+      if (editionId != null) 'edition_id': editionId,
       if (desiredLanguage != null) 'desired_language': desiredLanguage,
       if (desiredFormat != null) 'desired_format': desiredFormat,
       if (desiredEdition != null) 'desired_edition': desiredEdition,
@@ -4209,6 +4256,7 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistItem> {
   WishlistItemsCompanion copyWith({
     Value<String>? id,
     Value<String>? workId,
+    Value<String?>? editionId,
     Value<String?>? desiredLanguage,
     Value<String?>? desiredFormat,
     Value<String?>? desiredEdition,
@@ -4220,6 +4268,7 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistItem> {
     return WishlistItemsCompanion(
       id: id ?? this.id,
       workId: workId ?? this.workId,
+      editionId: editionId ?? this.editionId,
       desiredLanguage: desiredLanguage ?? this.desiredLanguage,
       desiredFormat: desiredFormat ?? this.desiredFormat,
       desiredEdition: desiredEdition ?? this.desiredEdition,
@@ -4238,6 +4287,9 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistItem> {
     }
     if (workId.present) {
       map['work_id'] = Variable<String>(workId.value);
+    }
+    if (editionId.present) {
+      map['edition_id'] = Variable<String>(editionId.value);
     }
     if (desiredLanguage.present) {
       map['desired_language'] = Variable<String>(desiredLanguage.value);
@@ -4268,6 +4320,7 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistItem> {
     return (StringBuffer('WishlistItemsCompanion(')
           ..write('id: $id, ')
           ..write('workId: $workId, ')
+          ..write('editionId: $editionId, ')
           ..write('desiredLanguage: $desiredLanguage, ')
           ..write('desiredFormat: $desiredFormat, ')
           ..write('desiredEdition: $desiredEdition, ')
@@ -8220,6 +8273,7 @@ typedef $$WishlistItemsTableCreateCompanionBuilder =
     WishlistItemsCompanion Function({
       required String id,
       required String workId,
+      Value<String?> editionId,
       Value<String?> desiredLanguage,
       Value<String?> desiredFormat,
       Value<String?> desiredEdition,
@@ -8232,6 +8286,7 @@ typedef $$WishlistItemsTableUpdateCompanionBuilder =
     WishlistItemsCompanion Function({
       Value<String> id,
       Value<String> workId,
+      Value<String?> editionId,
       Value<String?> desiredLanguage,
       Value<String?> desiredFormat,
       Value<String?> desiredEdition,
@@ -8278,6 +8333,11 @@ class $$WishlistItemsTableFilterComposer
   });
   ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get editionId => $composableBuilder(
+    column: $table.editionId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8349,6 +8409,11 @@ class $$WishlistItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get editionId => $composableBuilder(
+    column: $table.editionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get desiredLanguage => $composableBuilder(
     column: $table.desiredLanguage,
     builder: (column) => ColumnOrderings(column),
@@ -8414,6 +8479,9 @@ class $$WishlistItemsTableAnnotationComposer
   });
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get editionId =>
+      $composableBuilder(column: $table.editionId, builder: (column) => column);
 
   GeneratedColumn<String> get desiredLanguage => $composableBuilder(
     column: $table.desiredLanguage,
@@ -8493,6 +8561,7 @@ class $$WishlistItemsTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> workId = const Value.absent(),
+                Value<String?> editionId = const Value.absent(),
                 Value<String?> desiredLanguage = const Value.absent(),
                 Value<String?> desiredFormat = const Value.absent(),
                 Value<String?> desiredEdition = const Value.absent(),
@@ -8503,6 +8572,7 @@ class $$WishlistItemsTableTableManager
               }) => WishlistItemsCompanion(
                 id: id,
                 workId: workId,
+                editionId: editionId,
                 desiredLanguage: desiredLanguage,
                 desiredFormat: desiredFormat,
                 desiredEdition: desiredEdition,
@@ -8515,6 +8585,7 @@ class $$WishlistItemsTableTableManager
               ({
                 required String id,
                 required String workId,
+                Value<String?> editionId = const Value.absent(),
                 Value<String?> desiredLanguage = const Value.absent(),
                 Value<String?> desiredFormat = const Value.absent(),
                 Value<String?> desiredEdition = const Value.absent(),
@@ -8525,6 +8596,7 @@ class $$WishlistItemsTableTableManager
               }) => WishlistItemsCompanion.insert(
                 id: id,
                 workId: workId,
+                editionId: editionId,
                 desiredLanguage: desiredLanguage,
                 desiredFormat: desiredFormat,
                 desiredEdition: desiredEdition,

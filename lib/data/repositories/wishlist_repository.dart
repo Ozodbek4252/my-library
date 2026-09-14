@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+
 import '../../domain/models/book_draft.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/models/library_models.dart';
@@ -16,6 +17,10 @@ class WishlistRepository {
   Stream<List<WishlistEntry>> watchWishlist({WishlistFilter? filter}) {
     final query = _db.select(_db.wishlistItems).join([
       innerJoin(_db.works, _db.works.id.equalsExp(_db.wishlistItems.workId)),
+      leftOuterJoin(
+        _db.editions,
+        _db.editions.id.equalsExp(_db.wishlistItems.editionId),
+      ),
     ])
       ..orderBy([OrderingTerm.desc(_db.wishlistItems.dateAdded)]);
 
@@ -38,8 +43,8 @@ class WishlistRepository {
               WishlistEntry(
                 item: row.readTable(_db.wishlistItems),
                 work: row.readTable(_db.works),
-                desiredEditionColor:
-                    _colorFor(row.readTable(_db.works).id),
+                edition: row.readTableOrNull(_db.editions),
+                desiredEditionColor: _colorFor(row.readTable(_db.works).id),
               ),
           ],
         );
@@ -48,6 +53,10 @@ class WishlistRepository {
   Stream<WishlistEntry?> watchItem(String itemId) {
     final query = _db.select(_db.wishlistItems).join([
       innerJoin(_db.works, _db.works.id.equalsExp(_db.wishlistItems.workId)),
+      leftOuterJoin(
+        _db.editions,
+        _db.editions.id.equalsExp(_db.wishlistItems.editionId),
+      ),
     ])
       ..where(_db.wishlistItems.id.equals(itemId));
 
@@ -57,6 +66,7 @@ class WishlistRepository {
               : WishlistEntry(
                   item: row.readTable(_db.wishlistItems),
                   work: row.readTable(_db.works),
+                  edition: row.readTableOrNull(_db.editions),
                   desiredEditionColor: _colorFor(row.readTable(_db.works).id),
                 ),
         );
@@ -167,14 +177,21 @@ class WishlistRepository {
           .getSingleOrNull();
       if (existing != null) return existing.id;
 
+      // A wanted book found by scanning carries a whole edition with it — ISBN,
+      // cover, page count, year. Recording it now means the day it is bought
+      // nothing has to be typed in again.
+      final editionId = await _editionFor(draft, workId, now);
+
       final id = newId();
       await _db.into(_db.wishlistItems).insert(
             WishlistItemsCompanion.insert(
               id: id,
               workId: workId,
+              editionId: Value(editionId),
               desiredLanguage: Value(desiredLanguage ?? draft.language),
               desiredFormat: Value(desiredFormat ?? draft.format),
-              desiredEdition: Value(desiredEdition ?? draft.publisher),
+              desiredEdition:
+                  Value(desiredEdition ?? draft.editionName ?? draft.publisher),
               priority: Value(priority.name),
               notes: Value(notes),
               dateAdded: now,
@@ -182,6 +199,58 @@ class WishlistRepository {
           );
       return id;
     });
+  }
+
+  /// Stores the edition a wanted book was identified as, when there is enough
+  /// to identify one. It gets no copy: the user does not own it yet.
+  Future<String?> _editionFor(
+    BookDraft draft,
+    String workId,
+    DateTime now,
+  ) async {
+    final identifiesAnEdition = draft.isbn13 != null ||
+        draft.isbn10 != null ||
+        draft.pageCount != null ||
+        draft.coverUrl != null ||
+        draft.coverImagePath != null;
+    if (!identifiesAnEdition) return draft.editionId;
+
+    // An edition already on file for this ISBN is the one to point at.
+    if (draft.isbn13 != null) {
+      final known = await (_db.select(_db.editions)
+            ..where((e) => e.isbn13.equals(draft.isbn13!))
+            ..limit(1))
+          .getSingleOrNull();
+      if (known != null) return known.id;
+    }
+
+    final editionId = draft.editionId ?? newId();
+    await _db.into(_db.editions).insert(
+          EditionsCompanion.insert(
+            id: editionId,
+            workId: workId,
+            isbn13: Value(draft.isbn13),
+            isbn10: Value(draft.isbn10),
+            publisher: Value(draft.publisher),
+            publicationDate: Value(draft.publicationDate),
+            publishedYear: Value(draft.publishedYear),
+            language: Value(draft.language),
+            format: Value(draft.format),
+            editionName: Value(draft.editionName),
+            pageCount: Value(draft.pageCount),
+            coverUrl: Value(draft.coverUrl),
+            coverImagePath: Value(draft.coverImagePath),
+            coverColorIndex: Value(draft.coverColorIndex),
+            dimensions: Value(draft.dimensions),
+            weightGrams: Value(draft.weightGrams),
+            translator: Value(draft.translator),
+            illustrators: draft.illustrators,
+            country: Value(draft.country),
+            createdAt: now,
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+    return editionId;
   }
 
   Future<void> update(
@@ -212,6 +281,19 @@ class WishlistRepository {
       if (item == null) return;
 
       await (_db.delete(_db.wishlistItems)..where((w) => w.id.equals(itemId))).go();
+
+      // The edition recorded for a wanted book is not owned; if no copy was
+      // ever attached to it, it existed only for this wishlist entry.
+      final editionId = item.editionId;
+      if (editionId != null) {
+        final copies = await (_db.select(_db.copies)
+              ..where((c) => c.editionId.equals(editionId)))
+            .get();
+        if (copies.isEmpty) {
+          await (_db.delete(_db.editions)..where((e) => e.id.equals(editionId)))
+              .go();
+        }
+      }
 
       final editionRows = await (_db.select(_db.editions)
             ..where((e) => e.workId.equals(item.workId)))

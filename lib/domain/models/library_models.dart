@@ -135,19 +135,28 @@ class WishlistEntry {
     required this.item,
     required this.work,
     required this.desiredEditionColor,
+    this.edition,
   });
 
   final WishlistItem item;
   final Work work;
   final int desiredEditionColor;
 
+  /// The edition this was identified as, when it came from a scan or a lookup.
+  /// Null for a book wanted only in the abstract.
+  final Edition? edition;
+
   Priority get priority => Priority.fromName(item.priority);
+
+  int get coverColorIndex => edition?.coverColorIndex ?? desiredEditionColor;
+  String? get coverUrl => edition?.coverUrl;
+  String? get coverImagePath => edition?.coverImagePath;
 
   /// "English · Hardcover · Norton"
   String get wantLine => Fmt.dotted([
-        item.desiredLanguage,
-        item.desiredFormat,
-        item.desiredEdition,
+        item.desiredLanguage ?? edition?.language,
+        item.desiredFormat ?? edition?.format,
+        item.desiredEdition ?? edition?.editionName ?? edition?.publisher,
       ]);
 }
 

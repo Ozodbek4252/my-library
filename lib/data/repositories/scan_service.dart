@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import '../../core/utils/isbn.dart';
 import '../../domain/models/book_draft.dart';
 import '../../domain/models/library_models.dart';
 import '../local/database.dart';
 import '../metadata/book_metadata.dart';
+import 'collection_mutations.dart';
 import 'library_repository.dart';
 import 'wishlist_repository.dart';
 
@@ -28,6 +31,7 @@ class ScanResult {
     this.details,
     this.matchedEdition,
     this.wishlistItem,
+    this.enrichment = const EnrichmentResult([]),
   });
 
   final String isbn;
@@ -43,6 +47,9 @@ class ScanResult {
   final Edition? matchedEdition;
 
   final WishlistItem? wishlistItem;
+
+  /// What this scan was able to add to a record that was already on file.
+  final EnrichmentResult enrichment;
 
   bool get isOwned => verdict != ScanVerdict.notInLibrary;
   bool get isWishlisted => wishlistItem != null;
@@ -89,6 +96,11 @@ class ScanFailure implements Exception {
 
 /// Turns a barcode into a verdict: ISBN → edition → work → the user's shelves.
 class ScanService {
+  /// How long a gap-filling lookup may take before the verdict is shown
+  /// without it. Deliberately shorter than a first-time lookup: there is
+  /// nothing to wait for, only something to gain.
+  static const enrichmentTimeout = Duration(seconds: 2);
+
   ScanService({
     required BookMetadataRepository metadata,
     required LibraryRepository library,
@@ -119,17 +131,64 @@ class ScanService {
 
     // The collection is checked first: an ISBN already on the shelves needs no
     // network round trip at all, which is what makes the bookstore flow fast.
-    final localEdition = await _library.findEditionByIsbn(isbn);
+    var localEdition = await _library.findEditionByIsbn(isbn);
     if (localEdition != null) {
-      final details = await _library.bookDetails(localEdition.workId);
-      final metadata = await _metadataFor(isbn, fallback: details, edition: localEdition);
+      var details = await _library.bookDetails(localEdition.workId);
+      var enrichment = const EnrichmentResult([]);
+
+      // A thin record is worth a lookup: whatever it is missing — a cover, the
+      // page count, the year — can be filled in from what the scan finds.
+      // A complete one never touches the network.
+      if (details != null && _library.hasGaps(details.work, localEdition)) {
+        try {
+          // The verdict does not depend on this lookup — the book is already
+          // on the shelves. Topping up its record must never be what keeps
+          // someone standing in a bookshop waiting, so it gets a short leash.
+          final found = await _metadata
+              .lookupByIsbn(isbn)
+              .timeout(enrichmentTimeout);
+          enrichment = await _library.fillGaps(
+            workId: details.work.id,
+            editionId: localEdition.id,
+            found: found,
+          );
+          if (enrichment.isNotEmpty) {
+            localEdition =
+                await _library.editionById(localEdition.id) ?? localEdition;
+            details = await _library.bookDetails(localEdition.workId);
+          }
+        } catch (_) {
+          // Offline, or the provider has nothing. The book is still on the
+          // shelves and the verdict below is unaffected.
+        }
+      }
+
+      // Settled now, so the closures below see a value that cannot change.
+      final matched = localEdition!;
+      final metadata =
+          await _metadataFor(isbn, fallback: details, edition: matched);
+
+      // Knowing an edition is not the same as owning it: it may be one the
+      // user wishlisted, or one they used to own. Only a copy marked owned
+      // makes this "you already own this book".
+      final ownsThisEdition = details?.editions
+              .where((e) => e.edition.id == matched.id)
+              .any((e) => e.isOwned) ??
+          false;
+      final ownsTheWork = details?.isOwned ?? false;
+
       return ScanResult(
         isbn: isbn,
         metadata: metadata,
-        verdict: ScanVerdict.ownedSameEdition,
+        verdict: ownsThisEdition
+            ? ScanVerdict.ownedSameEdition
+            : ownsTheWork
+                ? ScanVerdict.ownedOtherEdition
+                : ScanVerdict.notInLibrary,
         details: details,
-        matchedEdition: localEdition,
+        matchedEdition: matched,
         wishlistItem: details?.wishlistItem,
+        enrichment: enrichment,
       );
     }
 
@@ -155,15 +214,43 @@ class ScanService {
     final work =
         await _library.findWorkByTitleAuthor(metadata.title, metadata.authors);
     if (work != null) {
-      final details = await _library.bookDetails(work.id);
-      final owned = details?.isOwned ?? false;
+      var details = await _library.bookDetails(work.id);
+      var enrichment = const EnrichmentResult([]);
+      Edition? matched;
+
+      // The book may already be here, recorded without its ISBN. If exactly
+      // one edition fits what was scanned, this scan is what that record was
+      // missing — including the ISBN that would have matched it outright.
+      final mergeable = await _library.findMergeableEdition(work.id, metadata);
+      if (mergeable != null) {
+        enrichment = await _library.fillGaps(
+          workId: work.id,
+          editionId: mergeable.id,
+          found: metadata,
+        );
+        matched = await _library.editionById(mergeable.id) ?? mergeable;
+        details = await _library.bookDetails(work.id);
+      }
+
+      final ownsTheWork = details?.isOwned ?? false;
+      final ownsMatched = matched != null &&
+          (details?.editions
+                  .where((e) => e.edition.id == matched!.id)
+                  .any((e) => e.isOwned) ??
+              false);
+
       return ScanResult(
         isbn: isbn,
         metadata: metadata,
-        verdict:
-            owned ? ScanVerdict.ownedOtherEdition : ScanVerdict.notInLibrary,
+        verdict: ownsMatched
+            ? ScanVerdict.ownedSameEdition
+            : ownsTheWork
+                ? ScanVerdict.ownedOtherEdition
+                : ScanVerdict.notInLibrary,
         details: details,
+        matchedEdition: matched,
         wishlistItem: details?.wishlistItem ?? await _wishlist.itemForWork(work.id),
+        enrichment: enrichment,
       );
     }
 

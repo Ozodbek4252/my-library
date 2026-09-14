@@ -5,6 +5,7 @@ import 'package:my_library/data/local/database.dart';
 import 'package:my_library/data/repositories/collection_mutations.dart';
 import 'package:my_library/data/repositories/library_repository.dart';
 import 'package:my_library/data/seed/seeder.dart';
+import 'package:my_library/data/metadata/book_metadata.dart';
 import 'package:my_library/domain/models/book_draft.dart';
 
 void main() {
@@ -41,6 +42,51 @@ void main() {
     await db.saveDraft(draft);
     reread = await LibraryRepository(db).bookDetails(added.workId);
     expect(reread!.primaryEdition!.edition.coverImagePath, isNull);
+
+    await db.close();
+  });
+
+  test('re-scanning a book with missing details fills them back in', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    await db.ensureIndexes();
+
+    // A book saved before the wishlist fix: title, author, publisher only.
+    final added = await db.addBook(
+      BookDraft(
+        title: 'Essentialism',
+        authors: ['Greg McKeown'],
+        publisher: 'Crown Business',
+      ),
+    );
+    var details = await LibraryRepository(db).bookDetails(added.workId);
+    expect(details!.primaryEdition!.edition.isbn13, isNull);
+    expect(details.primaryEdition!.edition.coverUrl, isNull);
+
+    // Scanning the ISBN in the editor replaces the draft with what the lookup
+    // found, keeping the ids, and saving writes it over the thin record.
+    final refreshed = const BookMetadata(
+      title: 'Essentialism',
+      authors: ['Greg McKeown'],
+      isbn13: '9780804137386',
+      publisher: 'Crown Business',
+      publishedYear: 2014,
+      pageCount: 260,
+      coverUrl: 'https://covers.openlibrary.org/b/id/7890-L.jpg',
+    ).toDraft()
+      ..workId = added.workId
+      ..editionId = added.editionId;
+
+    await db.saveDraft(refreshed);
+
+    details = await LibraryRepository(db).bookDetails(added.workId);
+    final edition = details!.primaryEdition!.edition;
+    expect(edition.isbn13, '9780804137386');
+    expect(edition.pageCount, 260);
+    expect(edition.publishedYear, 2014);
+    expect(edition.coverUrl, 'https://covers.openlibrary.org/b/id/7890-L.jpg');
+    // Repaired in place — no second edition, no second copy.
+    expect((await db.select(db.editions).get()), hasLength(1));
+    expect((await db.select(db.copies).get()), hasLength(1));
 
     await db.close();
   });

@@ -4,6 +4,8 @@ import '../../core/utils/isbn.dart';
 import '../../domain/models/enums.dart';
 import '../../domain/models/library_models.dart';
 import '../local/database.dart';
+import '../metadata/book_metadata.dart';
+import 'collection_mutations.dart';
 import 'library_query.dart';
 
 /// Reads and writes the user's collection. Every UI screen goes through this
@@ -219,6 +221,76 @@ class LibraryRepository {
       readingEntries: entries,
     );
   }
+
+  /// True when a record on the shelves is missing something a lookup could
+  /// supply. Checked before reaching for the network so a complete book still
+  /// resolves from the database alone, which is what keeps a scan fast.
+  bool hasGaps(Work work, Edition edition) {
+    bool blank(String? value) => value == null || value.isEmpty;
+
+    final hasArtwork =
+        !blank(edition.coverUrl) || !blank(edition.coverImagePath);
+
+    return !hasArtwork ||
+        blank(edition.isbn13) ||
+        blank(edition.publisher) ||
+        blank(edition.language) ||
+        blank(edition.format) ||
+        edition.pageCount == null ||
+        edition.publishedYear == null ||
+        blank(work.description) ||
+        work.genres.isEmpty;
+  }
+
+  /// Fills only the blanks on a book already in the library.
+  Future<EnrichmentResult> fillGaps({
+    required String workId,
+    required String editionId,
+    required BookMetadata found,
+  }) =>
+      _db.fillGaps(workId: workId, editionId: editionId, found: found);
+
+  /// Finds an edition of [workId] that is plainly the one just scanned, only
+  /// recorded without its ISBN — a book typed in by hand, or moved over from
+  /// the wishlist before it had one.
+  ///
+  /// Deliberately cautious. A candidate must carry no ISBN of its own, and
+  /// nothing it does record may disagree with what was scanned: a Russian
+  /// hardcover is not the English paperback in your hand, and merging them
+  /// would be worse than leaving both alone. An ambiguous choice is no choice,
+  /// so several candidates mean none.
+  Future<Edition?> findMergeableEdition(
+    String workId,
+    BookMetadata found,
+  ) async {
+    final candidates = await (_db.select(_db.editions)
+          ..where((e) =>
+              e.workId.equals(workId) & e.isbn13.isNull() & e.isbn10.isNull()))
+        .get();
+    if (candidates.length != 1) return null;
+
+    final edition = candidates.single;
+
+    bool conflicts<T>(T? stored, T? scanned) {
+      if (stored == null || scanned == null) return false;
+      if (stored is String && scanned is String) {
+        return stored.trim().toLowerCase() != scanned.trim().toLowerCase();
+      }
+      return stored != scanned;
+    }
+
+    final disagrees = conflicts(edition.publisher, found.publisher) ||
+        conflicts(edition.language, found.language) ||
+        conflicts(edition.format, found.format) ||
+        conflicts(edition.publishedYear, found.publishedYear) ||
+        conflicts(edition.pageCount, found.pageCount);
+
+    return disagrees ? null : edition;
+  }
+
+  Future<Edition?> editionById(String id) =>
+      (_db.select(_db.editions)..where((e) => e.id.equals(id)))
+          .getSingleOrNull();
 
   Future<Work?> workById(String id) =>
       (_db.select(_db.works)..where((w) => w.id.equals(id))).getSingleOrNull();

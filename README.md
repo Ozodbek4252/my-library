@@ -19,6 +19,12 @@ Work        the book itself — 1984 by George Orwell
 - **Reading state lives on the Work.** You do not re-read a book by owning it twice.
 - **ISBN identifies an Edition.** A different ISBN for a book you own is a new
   *edition*, never a duplicate; the same ISBN twice is a second *copy*.
+- **Knowing an edition is not owning it.** A wishlisted book, or one you used
+  to own, is stored as an Edition with no owned Copy — so a scan says "not in
+  your library yet" rather than claiming you have it.
+- **A wanted book keeps the edition it was scanned as.** Its ISBN, cover, page
+  count and year are recorded when it is wishlisted, so buying it later adds a
+  Copy to that edition instead of starting from a blank one.
 - Two books that merely share a title are not duplicates — matching uses title
   **and** author.
 

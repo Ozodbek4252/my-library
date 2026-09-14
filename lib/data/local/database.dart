@@ -23,7 +23,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'book_collection'));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -32,6 +32,10 @@ class AppDatabase extends _$AppDatabase {
           // every book they already had.
           if (from < 2) {
             await m.addColumn(editions, editions.coverImagePath);
+          }
+          // v3 let a wishlist entry remember the edition it was scanned from.
+          if (from < 3) {
+            await m.addColumn(wishlistItems, wishlistItems.editionId);
           }
         },
         beforeOpen: (details) async {

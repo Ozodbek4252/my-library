@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import '../../domain/models/book_draft.dart';
 import '../../domain/models/enums.dart';
 import '../local/database.dart';
+import '../metadata/book_metadata.dart';
 
 String newId() {
   final rand = Random();
@@ -289,6 +290,16 @@ extension CollectionMutations on AppDatabase {
     });
   }
 
+  /// Points a work at an edition only if it is not already showing one, so
+  /// buying a wishlisted book does not change the cover of a book already on
+  /// the shelves.
+  Future<void> setPrimaryEditionIfUnset(String workId, String editionId) async {
+    final work =
+        await (select(works)..where((w) => w.id.equals(workId))).getSingleOrNull();
+    if (work == null || work.primaryEditionId != null) return;
+    await setPrimaryEdition(workId, editionId);
+  }
+
   Future<void> setPrimaryEdition(String workId, String editionId) =>
       (update(works)..where((w) => w.id.equals(workId))).write(
         WorksCompanion(
@@ -374,5 +385,119 @@ class RemoveCopyResult {
     return remainingEditions == 1
         ? 'Copy removed · 1 edition left'
         : 'Copy removed · $remainingEditions editions left';
+  }
+}
+
+/// What a lookup was able to add to a record that was already on the shelves.
+class EnrichmentResult {
+  const EnrichmentResult(this.filled);
+
+  /// Human-readable names of the fields that were empty and are now filled.
+  final List<String> filled;
+
+  bool get isEmpty => filled.isEmpty;
+  bool get isNotEmpty => filled.isNotEmpty;
+
+  /// "Filled in the cover, pages and year" — said out loud, because changing
+  /// someone's records silently is not on.
+  String get message {
+    if (filled.isEmpty) return '';
+    if (filled.length == 1) return 'Filled in the ${filled.single}';
+    final head = filled.sublist(0, filled.length - 1).join(', ');
+    return 'Filled in the $head and ${filled.last}';
+  }
+}
+
+/// Fills the blanks on a book already in the library from a fresh lookup.
+///
+/// Only ever writes fields that are currently empty. Anything the user typed,
+/// corrected or photographed is left exactly as it is — a scan is a source of
+/// missing facts, never an authority over the ones already recorded.
+extension EnrichmentMutations on AppDatabase {
+  Future<EnrichmentResult> fillGaps({
+    required String workId,
+    required String editionId,
+    required BookMetadata found,
+  }) async {
+    final filled = <String>[];
+
+    return transaction(() async {
+      final work =
+          await (select(works)..where((w) => w.id.equals(workId))).getSingleOrNull();
+      final edition = await (select(editions)..where((e) => e.id.equals(editionId)))
+          .getSingleOrNull();
+      if (work == null || edition == null) return EnrichmentResult(filled);
+
+      // --- the edition ---
+      var editionUpdate = const EditionsCompanion();
+
+      Value<T?> keep<T extends Object>(T? current, T? incoming, String label) {
+        final isEmpty = current == null || (current is String && current.isEmpty);
+        if (!isEmpty || incoming == null) return const Value.absent();
+        if (incoming is String && incoming.isEmpty) return const Value.absent();
+        filled.add(label);
+        return Value(incoming);
+      }
+
+      editionUpdate = editionUpdate.copyWith(
+        isbn13: keep(edition.isbn13, found.isbn13, 'ISBN'),
+        isbn10: keep(edition.isbn10, found.isbn10, 'ISBN-10'),
+        publisher: keep(edition.publisher, found.publisher, 'publisher'),
+        publicationDate:
+            keep(edition.publicationDate, found.publicationDate, 'publication date'),
+        publishedYear: keep(edition.publishedYear, found.publishedYear, 'year'),
+        language: keep(edition.language, found.language, 'language'),
+        format: keep(edition.format, found.format, 'format'),
+        editionName: keep(edition.editionName, found.editionName, 'edition name'),
+        pageCount: keep(edition.pageCount, found.pageCount, 'page count'),
+        // A cover the user photographed outranks any URL, so it is never
+        // touched; the URL is only filled when there is no artwork at all.
+        coverUrl: (edition.coverImagePath ?? '').isNotEmpty
+            ? const Value.absent()
+            : keep(edition.coverUrl, found.coverUrl, 'cover'),
+        dimensions: keep(edition.dimensions, found.dimensions, 'dimensions'),
+        weightGrams: keep(edition.weightGrams, found.weightGrams, 'weight'),
+        translator: keep(edition.translator, found.translator, 'translator'),
+        country: keep(edition.country, found.country, 'country'),
+      );
+
+      if (edition.illustrators.isEmpty && found.illustrators.isNotEmpty) {
+        editionUpdate =
+            editionUpdate.copyWith(illustrators: Value(found.illustrators));
+        filled.add('illustrators');
+      }
+
+      await (update(editions)..where((e) => e.id.equals(editionId)))
+          .write(editionUpdate);
+
+      // --- the work ---
+      var workUpdate = const WorksCompanion();
+      workUpdate = workUpdate.copyWith(
+        description: keep(work.description, found.description, 'description'),
+        originalTitle:
+            keep(work.originalTitle, found.originalTitle, 'original title'),
+        originalLanguage: keep(
+          work.originalLanguage,
+          found.originalLanguage,
+          'original language',
+        ),
+        seriesName: keep(work.seriesName, found.seriesName, 'series'),
+        seriesIndex: keep(work.seriesIndex, found.seriesIndex, 'series number'),
+        firstPublished:
+            keep(work.firstPublished, found.firstPublished, 'first published'),
+      );
+
+      if (work.genres.isEmpty && found.genres.isNotEmpty) {
+        workUpdate = workUpdate.copyWith(genres: Value(found.genres));
+        filled.add('genre');
+      }
+
+      if (workUpdate != const WorksCompanion()) {
+        await (update(works)..where((w) => w.id.equals(workId)))
+            .write(workUpdate.copyWith(updatedAt: Value(DateTime.now())));
+      }
+
+      return EnrichmentResult(filled);
+    });
   }
 }

@@ -7,6 +7,7 @@ import '../../../core/routing/routes.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../core/theme/typography.dart';
 import '../../../core/utils/formatting.dart';
+import '../../../core/utils/isbn.dart';
 import '../../../core/widgets/app_buttons.dart';
 import '../../../core/widgets/app_icons.dart';
 import '../../../core/widgets/app_sheet.dart';
@@ -85,30 +86,47 @@ class _WishlistDetailBody extends ConsumerWidget {
     );
     if (!confirmed || !context.mounted) return;
 
-    final draft = BookDraft(
-      workId: entry.work.id,
-      title: entry.work.title,
-      authors: [...entry.work.authors],
-      genres: [...entry.work.genres],
-      description: entry.work.description,
-      originalTitle: entry.work.originalTitle,
-      originalLanguage: entry.work.originalLanguage,
-      seriesName: entry.work.seriesName,
-      seriesIndex: entry.work.seriesIndex,
-      firstPublished: entry.work.firstPublished,
-      language: entry.item.desiredLanguage,
-      format: entry.item.desiredFormat,
-      publisher: entry.item.desiredEdition,
-      coverColorIndex: entry.desiredEditionColor,
-      ownership: Ownership.owned,
-    );
+    final db = ref.read(databaseProvider);
+    final edition = entry.edition;
+    final workId = entry.work.id;
 
-    final result = await ref.read(databaseProvider).addBook(draft);
+    if (edition != null) {
+      // The edition was captured when the book was wishlisted — ISBN, cover,
+      // pages and all. Buying it adds a copy to that edition rather than
+      // starting a blank one.
+      await db.addCopyToEdition(
+        edition.id,
+        CopyDraft(ownership: Ownership.owned, purchaseDate: DateTime.now()),
+      );
+      await db.setPrimaryEditionIfUnset(workId, edition.id);
+      await ref.read(wishlistRepositoryProvider).remove(entry.item.id);
+    } else {
+      // Nothing but a wish: build what little is known into a first edition.
+      final draft = BookDraft(
+        workId: workId,
+        title: entry.work.title,
+        authors: [...entry.work.authors],
+        genres: [...entry.work.genres],
+        description: entry.work.description,
+        originalTitle: entry.work.originalTitle,
+        originalLanguage: entry.work.originalLanguage,
+        seriesName: entry.work.seriesName,
+        seriesIndex: entry.work.seriesIndex,
+        firstPublished: entry.work.firstPublished,
+        language: entry.item.desiredLanguage,
+        format: entry.item.desiredFormat,
+        publisher: entry.item.desiredEdition,
+        coverColorIndex: entry.desiredEditionColor,
+        ownership: Ownership.owned,
+      );
+      await db.addBook(draft);
+    }
+
     if (!context.mounted) return;
 
     AppToast.show(context, 'Moved to your library');
     context.go(Routes.library);
-    context.push(Routes.bookDetails(result.workId));
+    context.push(Routes.bookDetails(workId));
   }
 
   Future<void> _remove(BuildContext context, WidgetRef ref) async {
@@ -248,7 +266,9 @@ class _WishlistDetailBody extends ConsumerWidget {
             BookCover(
               title: entry.work.title,
               author: Fmt.surname(entry.work.authors),
-              colorIndex: entry.desiredEditionColor,
+              colorIndex: entry.coverColorIndex,
+              coverUrl: entry.coverUrl,
+              coverImagePath: entry.coverImagePath,
               width: 104,
               height: 156,
               titleSize: 16,
@@ -377,8 +397,35 @@ class _WishlistDetailBody extends ConsumerWidget {
               labelWidth: 112,
               value: Fmt.date(item.dateAdded),
               verticalPadding: 12,
-              last: true,
+              last: entry.edition == null,
             ),
+            // Everything below was captured when the book was identified, and
+            // carries over the day it is bought.
+            if (entry.edition != null) ...[
+              if (entry.edition!.pageCount != null)
+                FieldRow(
+                  label: 'Pages',
+                  labelWidth: 112,
+                  value: '${entry.edition!.pageCount}',
+                  verticalPadding: 12,
+                ),
+              if (entry.edition!.publishedYear != null)
+                FieldRow(
+                  label: 'Published',
+                  labelWidth: 112,
+                  value: '${entry.edition!.publishedYear}',
+                  verticalPadding: 12,
+                ),
+              FieldRow(
+                label: 'ISBN',
+                labelWidth: 112,
+                value: entry.edition!.isbn13 == null
+                    ? ''
+                    : Isbn.display(entry.edition!.isbn13!),
+                verticalPadding: 12,
+                last: true,
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 16),

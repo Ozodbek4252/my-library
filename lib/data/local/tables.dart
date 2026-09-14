@@ -137,6 +137,10 @@ class CopyTags extends Table {
 class WishlistItems extends Table {
   TextColumn get id => text()();
   TextColumn get workId => text().references(Works, #id, onDelete: KeyAction.cascade)();
+  /// The exact edition wanted, when it is known — a scan captures an ISBN, a
+  /// cover and a page count, and throwing those away would mean asking for
+  /// them again the day the book is bought.
+  TextColumn get editionId => text().nullable()();
   TextColumn get desiredLanguage => text().nullable()();
   TextColumn get desiredFormat => text().nullable()();
   TextColumn get desiredEdition => text().nullable()();

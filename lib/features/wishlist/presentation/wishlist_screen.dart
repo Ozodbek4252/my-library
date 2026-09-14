@@ -142,7 +142,9 @@ class _WishlistRow extends StatelessWidget {
           children: [
             BookCover(
               title: entry.work.title,
-              colorIndex: entry.desiredEditionColor,
+              colorIndex: entry.coverColorIndex,
+              coverUrl: entry.coverUrl,
+              coverImagePath: entry.coverImagePath,
               width: 38,
               height: 57,
               radius: AppRadius.thumb,

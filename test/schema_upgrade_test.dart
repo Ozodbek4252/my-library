@@ -9,9 +9,10 @@ import 'package:my_library/data/seed/seeder.dart';
 import 'package:my_library/domain/models/book_draft.dart';
 import 'package:sqlite3/sqlite3.dart';
 
-/// The cover column arrived in schema v2, and real devices already hold v1
-/// libraries. An upgrade that dropped a book would be unforgivable, so it is
-/// exercised here against a database that genuinely lacks the column.
+/// The cover column arrived in schema v2 and the wishlist's edition link in
+/// v3, while real devices already hold older libraries. An upgrade that dropped
+/// a book would be unforgivable, so each one is exercised here against a
+/// database that genuinely lacks the columns.
 void main() {
   late Directory temp;
   late File file;
@@ -39,12 +40,19 @@ void main() {
 
     final raw = sqlite3.open(file.path);
     raw.execute('ALTER TABLE editions DROP COLUMN cover_image_path');
+    raw.execute('ALTER TABLE wishlist_items DROP COLUMN edition_id');
     raw.execute('PRAGMA user_version = 1');
     final v1Columns = raw
         .select('PRAGMA table_info(editions)')
         .map((row) => row['name'] as String)
         .toList();
     expect(v1Columns, isNot(contains('cover_image_path')));
+    expect(
+      raw
+          .select('PRAGMA table_info(wishlist_items)')
+          .map((row) => row['name'] as String),
+      isNot(contains('edition_id')),
+    );
     raw.close();
 
     // 2. Open it with the current app. The migration should run.
@@ -57,6 +65,9 @@ void main() {
     expect(editions, hasLength(editionsBefore));
     expect(copies, hasLength(copiesBefore));
     expect(editions.every((e) => e.coverImagePath == null), isTrue);
+    final wishes = await db.select(db.wishlistItems).get();
+    expect(wishes, isNotEmpty, reason: 'wanted books survive too');
+    expect(wishes.every((w) => w.editionId == null), isTrue);
 
     // 3. And the new column is usable straight away.
     final added = await db.addBook(

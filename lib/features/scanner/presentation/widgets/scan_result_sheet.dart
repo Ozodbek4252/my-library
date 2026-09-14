@@ -128,6 +128,14 @@ class _ScanResultSheetState extends ConsumerState<ScanResultSheet> {
                   'it will clear it from there.',
             ),
           ],
+          if (result.enrichment.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _InfoNote(
+              icon: AppIcons.check,
+              text: '${result.enrichment.message} from this scan. Nothing you '
+                  'had already entered was changed.',
+            ),
+          ],
           const SizedBox(height: 18),
           PrimaryButton(
             label: switch (result.verdict) {
@@ -532,9 +540,10 @@ class _ScannedCopyCard extends StatelessWidget {
 }
 
 class _InfoNote extends StatelessWidget {
-  const _InfoNote({required this.text});
+  const _InfoNote({required this.text, this.icon = AppIcons.info});
 
   final String text;
+  final AppIconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -547,10 +556,10 @@ class _InfoNote extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const AppIcon(
-            AppIcons.info,
+          AppIcon(
+            icon,
             size: 16,
-            color: Color(0xFF8A6B3A),
+            color: const Color(0xFF8A6B3A),
             strokeWidth: 2,
           ),
           const SizedBox(width: 9),
