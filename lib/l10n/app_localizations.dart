@@ -1737,30 +1737,6 @@ abstract class AppL10n {
   /// **'Scan the ISBN'**
   String get scanIsbnSemantic;
 
-  /// No description provided for @shareTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Share this book?'**
-  String get shareTitle;
-
-  /// No description provided for @shareMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'No lookup service knows {isbn}. Sending the title, author and edition details you just entered would let the next person scanning this book find it. Your own notes, purchase details and shelves are never sent.'**
-  String shareMessage(String isbn);
-
-  /// No description provided for @shareConfirm.
-  ///
-  /// In en, this message translates to:
-  /// **'Share it'**
-  String get shareConfirm;
-
-  /// No description provided for @shareCancel.
-  ///
-  /// In en, this message translates to:
-  /// **'Keep it to myself'**
-  String get shareCancel;
-
   /// No description provided for @shareOffline.
   ///
   /// In en, this message translates to:

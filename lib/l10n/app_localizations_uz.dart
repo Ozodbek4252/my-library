@@ -931,20 +931,6 @@ class AppL10nUz extends AppL10n {
   String get scanIsbnSemantic => 'ISBN ni skanerlash';
 
   @override
-  String get shareTitle => 'Bu kitob bilan boʻlishasizmi?';
-
-  @override
-  String shareMessage(String isbn) {
-    return 'Hech bir xizmat $isbn ni bilmaydi. Siz kiritgan nom, muallif va nashr maʼlumotlarini yuborish keyingi odam bu kitobni topishiga yordam beradi. Shaxsiy izohlaringiz, xaridlaringiz va javonlaringiz hech qachon yuborilmaydi.';
-  }
-
-  @override
-  String get shareConfirm => 'Boʻlishish';
-
-  @override
-  String get shareCancel => 'Oʻzimda qoldiraman';
-
-  @override
   String get shareOffline =>
       'Kitob bazasiga ulanib boʻlmadi — kitobingiz baribir saqlandi';
 

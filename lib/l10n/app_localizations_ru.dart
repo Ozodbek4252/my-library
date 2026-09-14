@@ -948,20 +948,6 @@ class AppL10nRu extends AppL10n {
   String get scanIsbnSemantic => 'Отсканировать ISBN';
 
   @override
-  String get shareTitle => 'Поделиться этой книгой?';
-
-  @override
-  String shareMessage(String isbn) {
-    return 'Ни один справочник не знает $isbn. Если отправить название, автора и данные издания, которые вы только что ввели, следующий человек сможет найти эту книгу. Ваши заметки, покупки и полки не отправляются никогда.';
-  }
-
-  @override
-  String get shareConfirm => 'Поделиться';
-
-  @override
-  String get shareCancel => 'Оставить себе';
-
-  @override
   String get shareOffline =>
       'Не удалось связаться с базой книг — ваша книга всё равно сохранена';
 

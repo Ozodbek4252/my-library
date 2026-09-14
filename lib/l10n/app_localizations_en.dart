@@ -931,20 +931,6 @@ class AppL10nEn extends AppL10n {
   String get scanIsbnSemantic => 'Scan the ISBN';
 
   @override
-  String get shareTitle => 'Share this book?';
-
-  @override
-  String shareMessage(String isbn) {
-    return 'No lookup service knows $isbn. Sending the title, author and edition details you just entered would let the next person scanning this book find it. Your own notes, purchase details and shelves are never sent.';
-  }
-
-  @override
-  String get shareConfirm => 'Share it';
-
-  @override
-  String get shareCancel => 'Keep it to myself';
-
-  @override
   String get shareOffline =>
       'Couldn\'t reach the book database — your book is saved anyway';
 

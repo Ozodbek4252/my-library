@@ -262,8 +262,14 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
                 ? l10n.toastEditionAdded
                 : l10n.toastAddedToLibrary,
       );
+      // Started before the pop, so the provider is read while this screen is
+      // still alive, and handed a context that outlives it for the toast.
+      final shared = _shareUnknownBook(
+        Navigator.of(context, rootNavigator: true).context,
+        l10n,
+      );
       context.pop();
-      await _offerToShare();
+      unawaited(shared);
     } catch (e) {
       // Nothing was written, so the cover this edit picked is still an orphan
       // and must be cleaned up if the screen is closed.
@@ -398,9 +404,15 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
     }
   }
 
-  /// A book nobody could look up is worth sending back to the shared database
-  /// — but it is the user's text, so it is never sent without asking.
-  Future<void> _offerToShare() async {
+  /// A book no lookup service knew goes straight back to the shared database,
+  /// so the next person who scans it finds it.
+  ///
+  /// Only the book's own facts travel — title, author and edition. Notes,
+  /// purchase details, photos and shelves never leave the device.
+  ///
+  /// Everything up to the first await runs before the screen closes; the
+  /// [context] is the root navigator's, which outlives it.
+  Future<void> _shareUnknownBook(BuildContext context, AppL10n l10n) async {
     if (!(widget.draft?.unknownToProviders ?? false)) return;
 
     final scraper = ref.read(bookScraperSourceProvider);
@@ -408,18 +420,6 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
 
     final isbn = _draft.isbn13 ?? _draft.isbn10;
     if (isbn == null || !Isbn.isValid(isbn)) return;
-    if (!mounted) return;
-
-    final l10n = context.l10n;
-    final share = await showConfirmDialog(
-      context,
-      title: l10n.shareTitle,
-      message: l10n.shareMessage(Isbn.display(isbn)),
-      confirmLabel: l10n.shareConfirm,
-      cancelLabel: l10n.shareCancel,
-      destructive: false,
-    );
-    if (!share || !mounted) return;
 
     try {
       final message = await scraper.suggest(
@@ -432,9 +432,10 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
         language: _draft.language,
         description: _draft.description,
       );
-      if (mounted) AppToast.show(context, message);
+      if (context.mounted) AppToast.show(context, message);
     } on MetadataException catch (e) {
-      if (!mounted) return;
+      // The book is already saved; this only reports what the send did.
+      if (!context.mounted) return;
       AppToast.show(
         context,
         e.failure == MetadataFailure.network
