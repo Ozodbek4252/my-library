@@ -107,3 +107,32 @@ enum FilterGroup {
   const FilterGroup(this.title);
   final String title;
 }
+
+/// A field a scan was able to fill in on a record already in the library.
+///
+/// Stored as a value rather than a word so the note shown afterwards can be
+/// written in whichever language the interface is in.
+enum EnrichedField {
+  isbn,
+  isbn10,
+  publisher,
+  publicationDate,
+  year,
+  language,
+  format,
+  editionName,
+  pageCount,
+  cover,
+  dimensions,
+  weight,
+  translator,
+  country,
+  illustrators,
+  description,
+  originalTitle,
+  originalLanguage,
+  series,
+  seriesNumber,
+  firstPublished,
+  genre,
+}

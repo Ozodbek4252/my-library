@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n_extensions.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 import 'app_buttons.dart';
@@ -116,9 +117,14 @@ class LibrarySkeleton extends StatelessWidget {
                 children: [
                   const _SpinnerArc(size: 15),
                   const SizedBox(width: 9),
-                  Text(
-                    message!,
-                    style: AppText.sans(size: 12.5, color: AppColors.muted),
+                  // Flexible, not fixed: the same sentence is longer in some
+                  // languages than in others, and it must wrap rather than
+                  // run off the edge.
+                  Flexible(
+                    child: Text(
+                      message!,
+                      style: AppText.sans(size: 12.5, color: AppColors.muted),
+                    ),
                   ),
                 ],
               ),
@@ -256,21 +262,23 @@ class ErrorStateView extends StatelessWidget {
     super.key,
     required this.message,
     this.onRetry,
-    this.title = 'Something went wrong',
+    this.title,
   });
 
-  final String title;
+  /// Defaults to the generic apology when the call site has nothing better
+  /// to say.
+  final String? title;
   final String message;
   final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) => MessageState(
-        title: title,
+        title: title ?? context.l10n.scanFailUnknownTitle,
         message: message,
         icon: AppIcons.alert,
         titleSize: 22,
         maxMessageWidth: 260,
-        primaryLabel: onRetry == null ? null : 'Try again',
+        primaryLabel: onRetry == null ? null : context.l10n.actionTryAgain,
         onPrimary: onRetry,
       );
 }

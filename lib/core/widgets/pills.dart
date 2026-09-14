@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/models/enums.dart';
+import '../l10n_extensions.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 
@@ -38,15 +39,15 @@ class AppPill extends StatelessWidget {
     this.horizontalPadding = 9,
   });
 
-  AppPill.status(ReadingStatus status, {super.key, this.height = 24})
-      : label = status.label,
+  AppPill.status(ReadingStatus status, {required AppL10n l10n, super.key, this.height = 24})
+      : label = status.display(l10n),
         background = statusColors(status).bg,
         foreground = statusColors(status).fg,
         fontSize = 11,
         horizontalPadding = 9;
 
-  AppPill.priority(Priority priority, {super.key, this.height = 24})
-      : label = priority.label,
+  AppPill.priority(Priority priority, {required AppL10n l10n, super.key, this.height = 24})
+      : label = priority.display(l10n),
         background = priorityColors(priority).bg,
         foreground = priorityColors(priority).fg,
         fontSize = 11,

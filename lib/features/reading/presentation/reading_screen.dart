@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n_extensions.dart';
 import '../../../core/providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/tokens.dart';
@@ -38,7 +39,7 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
         AppSpacing.navClearance,
       ),
       children: [
-        Text('Reading', style: AppText.screenTitle),
+        Text(context.l10n.readingTitle, style: AppText.screenTitle),
         const SizedBox(height: 14),
         SizedBox(
           height: 34,
@@ -46,13 +47,13 @@ class _ReadingScreenState extends ConsumerState<ReadingScreen> {
             scrollDirection: Axis.horizontal,
             children: [
               AppChip(
-                label: 'Currently reading',
+                label: context.l10n.readingTabNow,
                 selected: !_historyTab,
                 onTap: () => setState(() => _historyTab = false),
               ),
               const SizedBox(width: 7),
               AppChip(
-                label: 'History',
+                label: context.l10n.readingTabHistory,
                 selected: _historyTab,
                 onTap: () => setState(() => _historyTab = true),
               ),
@@ -89,7 +90,7 @@ class _NowTab extends ConsumerWidget {
         ),
       ),
       error: (error, _) => ErrorStateView(
-        message: 'Your current reads could not be loaded.',
+        message: context.l10n.readingErrorMessage,
         onRetry: () => ref.invalidate(currentlyReadingProvider),
       ),
       data: (entries) => Column(
@@ -99,14 +100,15 @@ class _NowTab extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(top: 30, bottom: 10),
               child: MessageState(
-                title: 'Nothing on the go',
+                title: context.l10n.readingEmptyTitle,
                 message: upNext.isEmpty
-                    ? 'Add a book to your library, then set it to Reading to '
-                        'track your progress here.'
-                    : 'Pick something from your shelves and set it to Reading.',
+                    ? context.l10n.readingEmptyNoShelves
+                    : context.l10n.readingEmptyWithShelves,
                 titleSize: 22,
                 maxMessageWidth: 260,
-                primaryLabel: upNext.isEmpty ? 'Add a book' : 'Go to library',
+                primaryLabel: upNext.isEmpty
+                    ? context.l10n.actionAddBook
+                    : context.l10n.actionGoToLibrary,
                 onPrimary: () => context.go(
                   upNext.isEmpty ? Routes.library : Routes.library,
                 ),
@@ -118,7 +120,7 @@ class _NowTab extends ConsumerWidget {
               const SizedBox(height: 14),
             ],
           if (upNext.isNotEmpty) ...[
-            const SectionLabel('Up next · from your shelves', top: 6, bottom: 12),
+            SectionLabel(context.l10n.readingUpNext, top: 6, bottom: 12),
             SizedBox(
               height: 93,
               child: ListView.separated(
@@ -211,7 +213,7 @@ class _ReadingCard extends ConsumerWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        Fmt.authors(entry.work.authors),
+                        context.l10n.authorsOf(entry.work.authors),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppText.sans(
@@ -234,8 +236,11 @@ class _ReadingCard extends ConsumerWidget {
                           Flexible(
                             child: Text(
                               entry.totalPages > 0
-                                  ? '${entry.currentPage} / ${entry.totalPages} pages'
-                                  : 'pages read',
+                                  ? context.l10n.readingPagesOf(
+                                      entry.currentPage,
+                                      entry.totalPages,
+                                    )
+                                  : context.l10n.readingPagesRead,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: AppText.sans(
@@ -250,7 +255,7 @@ class _ReadingCard extends ConsumerWidget {
                       ProgressTrack(value: entry.progress),
                       const SizedBox(height: 7),
                       Text(
-                        entry.sinceLine,
+                        entry.sinceLine(context.l10n),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppText.sans(size: 11, color: AppColors.faint),
@@ -265,7 +270,7 @@ class _ReadingCard extends ConsumerWidget {
               children: [
                 Expanded(
                   child: PrimaryButton(
-                    label: 'Update page',
+                    label: context.l10n.readingUpdatePage,
                     height: 42,
                     fontSize: 13.5,
                     onPressed: () =>
@@ -275,7 +280,7 @@ class _ReadingCard extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: SecondaryButton(
-                    label: 'Mark finished',
+                    label: context.l10n.readingMarkFinished,
                     height: 42,
                     fontSize: 13.5,
                     onPressed: () async {
@@ -285,7 +290,9 @@ class _ReadingCard extends ConsumerWidget {
                       if (context.mounted) {
                         AppToast.show(
                           context,
-                          'Finished · added to ${DateTime.now().year} history',
+                          context.l10n.toastFinished(
+                            '${DateTime.now().year}',
+                          ),
                         );
                       }
                     },
@@ -322,17 +329,16 @@ class _HistoryTab extends ConsumerWidget {
         ),
       ),
       error: (error, _) => ErrorStateView(
-        message: 'Your reading history could not be loaded.',
+        message: context.l10n.readingHistoryError,
         onRetry: () => ref.invalidate(readingHistoryProvider),
       ),
       data: (entries) {
         if (entries.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.only(top: 40),
+          return Padding(
+            padding: const EdgeInsets.only(top: 40),
             child: MessageState(
-              title: 'No finished books yet',
-              message: 'When you mark a book as read it appears here, grouped '
-                  'by the month you finished it.',
+              title: context.l10n.readingHistoryEmptyTitle,
+              message: context.l10n.readingHistoryEmptyMessage,
               titleSize: 22,
               maxMessageWidth: 260,
             ),
@@ -376,12 +382,15 @@ class _HistoryTab extends ConsumerWidget {
                 children: [
                   _HistoryStat(
                     value: '${thisYear.length}',
-                    label: 'Read in $year',
+                    label: context.l10n.readingReadInYear(year),
                   ),
-                  _HistoryStat(value: Fmt.count(pages), label: 'Pages'),
+                  _HistoryStat(
+                    value: Fmt.count(pages),
+                    label: context.l10n.readingPagesLabel,
+                  ),
                   _HistoryStat(
                     value: average == null ? '—' : average.toStringAsFixed(1),
-                    label: 'Avg rating',
+                    label: context.l10n.readingAvgRating,
                   ),
                 ],
               ),
@@ -460,14 +469,14 @@ class _HistoryRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    Fmt.authors(entry.work.authors),
+                    context.l10n.authorsOf(entry.work.authors),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.sans(size: 12, color: AppColors.muted2),
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    entry.datesLine,
+                    entry.datesLine(context.l10n),
                     style: AppText.sans(size: 11, color: AppColors.faint),
                   ),
                 ],

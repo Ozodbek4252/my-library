@@ -2,6 +2,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:my_library/app.dart';
 import 'package:my_library/core/providers.dart';
 import 'package:my_library/core/widgets/book_cover.dart';
@@ -10,6 +11,7 @@ import 'package:my_library/data/local/database.dart';
 import 'package:my_library/core/utils/formatting.dart';
 import 'package:my_library/data/repositories/statistics_repository.dart';
 import 'package:my_library/data/seed/seeder.dart';
+import 'package:my_library/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -17,6 +19,10 @@ void main() {
 
   late AppDatabase db;
   late SharedPreferences prefs;
+
+  // Month and day names for every language the app offers, exactly as
+  // `main()` loads them before the first frame.
+  setUpAll(initializeDateFormatting);
 
   setUp(() async {
     db = AppDatabase(NativeDatabase.memory());
@@ -229,6 +235,45 @@ void main() {
 
     expect(find.text('Your shelves are empty'), findsOneWidget);
     expect(find.text('Scan a book'), findsOneWidget);
+
+    await teardownApp(tester);
+  });
+
+  testWidgets('the app opens in English when nothing has been chosen',
+      (tester) async {
+    await start(tester);
+
+    expect(find.text('Library'), findsWidgets);
+    expect(
+      Localizations.localeOf(tester.element(find.byType(AppBottomNav))),
+      const Locale('en'),
+    );
+
+    await teardownApp(tester);
+  });
+
+  testWidgets('choosing a language changes the words on screen',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'onboarding_complete': true,
+      'app_language': 'ru',
+    });
+    prefs = await SharedPreferences.getInstance();
+
+    await start(tester);
+
+    // Every nav label is now Russian, so none of the English ones survive.
+    expect(navItem('Library'), findsNothing);
+    expect(navItem('Reading'), findsNothing);
+    expect(navItem('Profile'), findsNothing);
+    expect(find.byType(AppBottomNav), findsOneWidget);
+
+    final l10n = await AppL10n.delegate.load(const Locale('ru'));
+    expect(navItem(l10n.navLibrary), findsOneWidget);
+    expect(navItem(l10n.navProfile), findsOneWidget);
+
+    // Dates and numbers follow the language too, not just the labels.
+    expect(Fmt.locale, 'ru');
 
     await teardownApp(tester);
   });

@@ -72,9 +72,16 @@ class CountSlice {
     required this.label,
     required this.count,
     required this.percent,
+    this.isOther = false,
   });
 
+  /// The tallied value as it is stored: a language, a genre, an author name.
+  /// Never translated — these are the user's own words.
   final String label;
   final int count;
   final double percent;
+
+  /// True for the folded tail of a chart. The one slice whose name is a word
+  /// rather than data, so the UI shows it in the interface language.
+  final bool isOther;
 }

@@ -1,0 +1,919 @@
+{
+  "@@locale": "en",
+  "languageName": "English",
+  "appTitle": "Book Collection",
+  "navLibrary": "Library",
+  "navReading": "Reading",
+  "navScan": "Scan",
+  "navWishlist": "Wishlist",
+  "navProfile": "Profile",
+  "actionCancel": "Cancel",
+  "actionSave": "Save",
+  "actionDone": "Done",
+  "actionEdit": "Edit",
+  "actionClear": "Clear",
+  "actionReset": "Reset",
+  "actionTryAgain": "Try again",
+  "actionBackToLibrary": "Back to library",
+  "actionBackToWishlist": "Back to wishlist",
+  "actionScanBook": "Scan a book",
+  "actionScanBarcode": "Scan its barcode",
+  "actionAddManually": "Add manually",
+  "actionAddItManually": "Add it manually",
+  "actionScanNext": "Scan next",
+  "actionOpenBook": "Open book",
+  "actionEnterIsbnManually": "Enter ISBN manually",
+  "actionKeepIt": "Keep it",
+  "actionNotYet": "Not yet",
+  "actionShowAll": "Show all",
+  "actionAddBook": "Add a book",
+  "actionGoToLibrary": "Go to library",
+  "onboardingHeadlineFirst": "Every book you own,",
+  "onboardingHeadlineSecond": "in your pocket.",
+  "onboardingSubhead": "Scan a barcode in the bookstore and know in two seconds whether it's already on your shelf.",
+  "onboardingStart": "Start my library",
+  "onboardingScanFirst": "Scan my first book",
+  "libraryTitle": "Library",
+  "librarySearchHint": "Title, author, ISBN…",
+  "libraryStatTotal": "Total",
+  "libraryStatUnread": "Unread",
+  "libraryStatReading": "Reading",
+  "libraryStatRead": "Read",
+  "libraryCountLine": "{shown} of {total} shown · sorted by {sort}",
+  "@libraryCountLine": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "sort": {
+        "type": "String"
+      }
+    }
+  },
+  "libraryShelves": "{count, plural, =1{1 shelf} other{{count} shelves}}",
+  "@libraryShelves": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "libraryEmptyTitle": "Your shelves are empty",
+  "libraryEmptyMessage": "Scan the barcode on a book you own — the rest fills itself in.",
+  "libraryLoading": "Opening your library…",
+  "libraryErrorTitle": "Your library couldn't be read",
+  "libraryErrorMessage": "The local database returned an error. Pull down to try again.",
+  "libraryNoMatchesTitle": "No matches",
+  "libraryNoMatchesFor": "Nothing in your library for “{query}”. It may be a book you don't own yet.",
+  "@libraryNoMatchesFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "libraryNoFilterMatches": "No books match these filters.",
+  "libraryClearFilters": "Clear filters",
+  "bookCount": "{count, plural, =1{1 book} other{{count} books}}",
+  "shelfCount": "{count, plural, =1{1 shelf} other{{count} shelves}}",
+  "@bookCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@shelfCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filterTitle": "Filter",
+  "filterShowBooks": "{count, plural, =1{Show 1 book} other{Show {count} books}}",
+  "@filterShowBooks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filterLoadFailed": "Filters couldn't be loaded.",
+  "sortTitle": "Sort by",
+  "groupReadingStatus": "Reading status",
+  "groupLanguage": "Language",
+  "groupGenre": "Genre",
+  "groupFormat": "Format",
+  "groupPublisher": "Publisher",
+  "groupAuthor": "Author",
+  "groupSeries": "Series",
+  "sortRecentlyAdded": "Recently added",
+  "sortTitleOption": "Title",
+  "sortAuthor": "Author",
+  "sortPages": "Pages",
+  "sortPublicationDate": "Publication date",
+  "sortRating": "Rating",
+  "statusUnread": "Unread",
+  "statusReading": "Reading",
+  "statusRead": "Read",
+  "statusDnf": "DNF",
+  "statusRereading": "Re-reading",
+  "statusRereadBadge": "Re-read",
+  "ownershipOwned": "Owned",
+  "ownershipWishlist": "Wishlist",
+  "ownershipPreviouslyOwned": "Previously owned",
+  "conditionNew": "New",
+  "conditionLikeNew": "Like new",
+  "conditionGood": "Good",
+  "conditionAcceptable": "Acceptable",
+  "conditionDamaged": "Damaged",
+  "priorityHigh": "High",
+  "priorityMedium": "Medium",
+  "priorityLow": "Low",
+  "photoFront": "Front",
+  "photoBack": "Back",
+  "photoSpine": "Spine",
+  "photoSpecialEdition": "Special edition",
+  "photoDamage": "Damage",
+  "photoSigned": "Signed",
+  "searchTry": "Try",
+  "searchRecent": "Recent",
+  "searchInYourLibrary": "{count, plural, =1{1 in your library} other{{count} in your library}}",
+  "@searchInYourLibrary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchNotInLibrary": "Not in your library?",
+  "searchAllEditions": "Search all editions",
+  "searchAllEditionsSection": "All editions",
+  "searchFailed": "The search could not be run.",
+  "searchNoEditionsFound": "No editions found for “{query}”.",
+  "@searchNoEditionsFound": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "searchLookupUnreachable": "We couldn't reach the book lookup. Your own library is still fully searchable.",
+  "searchLookupFailed": "The lookup failed. Try again in a moment.",
+  "searchPromoTitle": "In a bookstore?",
+  "searchPromoSubtitle": "Scanning is faster than typing.",
+  "searchPromoAction": "Scan",
+  "scannerTitle": "Point at the barcode",
+  "scannerSubtitle": "Usually on the back cover",
+  "scannerIsbnTitle": "Scan the ISBN",
+  "scannerIsbnSubtitle": "We'll fill in the number for you",
+  "scannerSearchByTitle": "Search by title",
+  "scannerEnterManually": "Enter manually",
+  "scannerTypeTheNumber": "Type the number",
+  "scannerLookingUp": "Looking it up…",
+  "scannerGotIt": "Got it",
+  "scannerStartingTitle": "Starting the camera…",
+  "scannerStartingMessage": "One moment.",
+  "scannerDeniedTitle": "Camera access is off",
+  "scannerDeniedMessage": "Scanning needs the camera. Turn it on in Settings, or type the 13 digits printed under the barcode.",
+  "scannerOpenSettings": "Open Settings",
+  "scannerUnsupportedTitle": "No camera here",
+  "scannerUnsupportedMessage": "This device cannot scan barcodes. You can still add books by ISBN or by hand.",
+  "scannerAddByHand": "Add book by hand",
+  "scannerFailedTitle": "The camera didn't start",
+  "scannerFailedMessage": "Something went wrong opening the camera. Try again, or enter the ISBN yourself.",
+  "isbnSheetTitle": "Enter ISBN",
+  "isbnSheetSubtitle": "The 10 or 13 digits printed under the barcode.",
+  "isbnSheetLookUp": "Look it up",
+  "isbnSheetUseNumber": "Use this number",
+  "isbnSheetAddWithout": "Add without an ISBN",
+  "isbnSheetEmpty": "Enter the number printed under the barcode.",
+  "isbnSheetInvalid": "That doesn't look like a valid ISBN. Check the digits and try again.",
+  "isbnInvalidToast": "That ISBN is not valid",
+  "scanFailBarcodeTitle": "Couldn't read that barcode",
+  "scanFailBarcodeMessage": "Low light, or the code may be creased. Try again, or type the 13 digits printed under it.",
+  "scanFailNotFoundTitle": "We don't know that ISBN",
+  "scanFailNotFoundMessage": "No book matches {isbn}. It may be a local printing. You can still add it by hand.",
+  "@scanFailNotFoundMessage": {
+    "placeholders": {
+      "isbn": {
+        "type": "String"
+      }
+    }
+  },
+  "scanFailNetworkTitle": "No connection",
+  "scanFailNetworkMessage": "We couldn't reach the book lookup. Your library still works offline — try again, or enter the details yourself.",
+  "scanFailUnknownTitle": "Something went wrong",
+  "scanFailUnknownMessage": "The lookup failed unexpectedly. Try again, or enter the details yourself.",
+  "scanFailThatCode": "that code",
+  "scanOwnedBanner": "You already own this book",
+  "scanNewBanner": "Not in your library yet",
+  "scanYourCopies": "YOUR COPIES",
+  "scanScannedCopy": "SCANNED COPY",
+  "scanEditionsOnShelves": "{count, plural, =1{1 edition on your shelves} other{{count} editions on your shelves}}",
+  "@scanEditionsOnShelves": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanAddAnotherCopy": "Add another copy",
+  "scanAddAsAnotherEdition": "Add as another edition",
+  "scanAddToLibrary": "Add to library",
+  "scanAddWithDetails": "Add with details",
+  "scanWishlistIt": "Wishlist it",
+  "scanAlreadyWishlisted": "Already wishlisted",
+  "scanWishlistNote": "On your wishlist since {month} — adding it will clear it from there.",
+  "@scanWishlistNote": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "scanEnrichedNote": "{summary} from this scan. Nothing you had already entered was changed.",
+  "@scanEnrichedNote": {
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "scanEditionMissing": "Edition details missing",
+  "scanCopiesSuffix": "{count, plural, other{{count} copies}}",
+  "@scanCopiesSuffix": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "toastAddedToLibrary": "Added to your library",
+  "toastEditionAdded": "Edition added to your library",
+  "toastAnotherCopyAdded": "Another copy added to your library",
+  "toastAddedClearedWishlist": "Added to your library · cleared from wishlist",
+  "toastAddedToWishlist": "Added to your wishlist",
+  "toastChangesSaved": "Changes saved",
+  "toastCopyUpdated": "Copy updated",
+  "toastCopyRemoved": "Copy removed",
+  "toastRemovedFromLibrary": "Removed from your library",
+  "toastCopyRemovedEditionsLeft": "{count, plural, =1{Copy removed · 1 edition left} other{Copy removed · {count} editions left}}",
+  "@toastCopyRemovedEditionsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "toastMovedToLibrary": "Moved to your library",
+  "toastRemovedFromWishlist": "Removed from your wishlist",
+  "toastProgressSaved": "Progress saved",
+  "toastFinished": "Finished · added to {year} history",
+  "@toastFinished": {
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "toastMarkedAs": "Marked as {status}",
+  "@toastMarkedAs": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "toastMainEditionUpdated": "Main edition updated",
+  "toastCopyAdded": "Copy added to your library",
+  "toastPhotoAdded": "Photo added",
+  "toastPhotoRemoved": "Photo removed",
+  "toastTitleRequired": "A title is required",
+  "toastCouldNotSave": "Couldn't save this book",
+  "toastCouldNotAdd": "Couldn't add this book",
+  "toastCouldNotWishlist": "Couldn't add to your wishlist",
+  "toastCouldNotOpenPhotos": "Couldn't open the photo library",
+  "toastCouldNotOpenCamera": "Couldn't open the camera",
+  "toastCouldNotOpenPictures": "Couldn't open your pictures",
+  "toastCouldNotOpenCropper": "Couldn't open the cropper",
+  "toastFilledFromIsbn": "Filled in from {title}",
+  "@toastFilledFromIsbn": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "toastIsbnNotFound": "We don't know that ISBN — fill it in yourself",
+  "toastIsbnOffline": "No connection — fill it in yourself",
+  "toastIsbnLookupFailed": "Lookup failed — fill it in yourself",
+  "toastSampleRestored": "Sample library restored",
+  "toastExported": "Exported {file}",
+  "@toastExported": {
+    "placeholders": {
+      "file": {
+        "type": "String"
+      }
+    }
+  },
+  "toastExportFailed": "Export failed — couldn't write the file",
+  "addBookTitle": "Add book",
+  "addEditionTitle": "Add edition",
+  "editBookTitle": "Edit book",
+  "editCopyTitle": "Edit copy",
+  "editCopyNotFoundTitle": "Copy not found",
+  "editCopyNotFoundMessage": "This copy is no longer in your library.",
+  "sectionTheBook": "The book",
+  "sectionThisEdition": "This edition",
+  "sectionStatus": "Status",
+  "sectionRating": "Rating",
+  "sectionOwnership": "Ownership",
+  "sectionPurchase": "Purchase",
+  "sectionCondition": "Condition",
+  "sectionLocation": "Location",
+  "sectionTags": "Tags",
+  "sectionPersonalNotes": "Personal notes",
+  "sectionEditionYouOwn": "The edition you own",
+  "sectionMyCopy": "My copy",
+  "sectionPersonalNote": "Personal note",
+  "sectionPhotosOfMyCopy": "Photos of my copy",
+  "sectionWhatIWant": "What I want",
+  "sectionNote": "Note",
+  "fieldTitle": "Title",
+  "fieldAuthor": "Author",
+  "fieldOriginalTitle": "Original title",
+  "fieldOriginalLanguage": "Original language",
+  "fieldGenre": "Genre",
+  "fieldSeries": "Series",
+  "fieldFirstPublished": "First published",
+  "fieldDescription": "Description",
+  "fieldIsbn": "ISBN",
+  "fieldIsbn10": "ISBN-10",
+  "fieldLanguage": "Language",
+  "fieldPublisher": "Publisher",
+  "fieldEdition": "Edition",
+  "fieldFormat": "Format",
+  "fieldPublished": "Published",
+  "fieldPages": "Pages",
+  "fieldCountry": "Country",
+  "fieldTranslator": "Translator",
+  "fieldIllustrators": "Illustrators",
+  "fieldDimensions": "Dimensions",
+  "fieldWeight": "Weight",
+  "weightGrams": "{grams} g",
+  "@weightGrams": {
+    "placeholders": {
+      "grams": {
+        "type": "int"
+      }
+    }
+  },
+  "fieldPurchased": "Purchased",
+  "fieldPrice": "Price",
+  "fieldWhere": "Where",
+  "fieldStore": "Store",
+  "fieldGift": "Gift",
+  "fieldGiftFrom": "Gift from",
+  "fieldCurrency": "Currency",
+  "fieldDate": "Date",
+  "fieldAdded": "Added",
+  "fieldPriority": "Priority",
+  "fieldCover": "Cover",
+  "hintRequired": "Required",
+  "hintAuthors": "Separate several with a comma",
+  "hintGenres": "Fiction, History…",
+  "hintFormats": "Paperback, Hardcover…",
+  "hintIsbn": "978…",
+  "hintNotRecorded": "Not recorded",
+  "hintChoose": "Choose",
+  "hintWhereBought": "Where you bought it",
+  "hintBlankIfPurchased": "Leave blank if purchased",
+  "hintTags": "dystopia, re-read",
+  "hintNotes": "Anything worth remembering about this copy…",
+  "hintLocation": "Home › Bedroom › Bookshelf 2 › Shelf 4",
+  "coverSheetTitle": "Cover",
+  "coverSheetSubtitle": "Photograph the book, or pick a picture you already have. You frame it next — drag any edge, or start from the 2:3 a cover is shown at.",
+  "coverTakePhoto": "Take a photo",
+  "coverChoosePicture": "Choose a picture",
+  "coverAdjustCrop": "Adjust the crop",
+  "coverRemove": "Remove cover",
+  "coverCropTitle": "Frame the cover",
+  "coverCropUse": "Use",
+  "addFillFromIsbn": "Fill in from ISBN",
+  "addLookingUp": "Looking up…",
+  "addScanHint": "Tap the cover to photograph the book. Scanning fills every field below automatically.",
+  "addScanInstead": "Scan instead →",
+  "addEditHint": "Tap the cover to photograph this edition. Changes here apply to the book and the edition shown on its details screen; purchase details live on the copy.",
+  "addSaveChanges": "Save changes",
+  "addToWishlist": "Add to wishlist",
+  "scanIsbnSemantic": "Scan the ISBN",
+  "shareTitle": "Share this book?",
+  "shareMessage": "No lookup service knows {isbn}. Sending the title, author and edition details you just entered would let the next person scanning this book find it. Your own notes, purchase details and shelves are never sent.",
+  "@shareMessage": {
+    "placeholders": {
+      "isbn": {
+        "type": "String"
+      }
+    }
+  },
+  "shareConfirm": "Share it",
+  "shareCancel": "Keep it to myself",
+  "shareOffline": "Couldn't reach the book database — your book is saved anyway",
+  "shareRejected": "The book database wouldn't accept it",
+  "detailsErrorTitle": "This book couldn't be opened",
+  "detailsErrorMessage": "Something went wrong reading it from your library.",
+  "detailsRemovedTitle": "No longer in your library",
+  "detailsRemovedMessage": "This book has been removed.",
+  "detailsNoEdition": "No edition recorded yet.",
+  "detailsUpdateProgress": "Update progress",
+  "detailsPagesOf": "{current} of {total} pages",
+  "@detailsPagesOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "detailsPageOnly": "Page {current}",
+  "@detailsPageOnly": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      }
+    }
+  },
+  "detailsEditionsOfWork": "{count, plural, =1{1 edition of this work} other{{count} editions of this work}}",
+  "@detailsEditionsOfWork": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "detailsAddAnotherCopyOrTranslation": "Add another copy or translation",
+  "detailsMenuEditBook": "Edit book details",
+  "detailsMenuAllEditions": "All editions of this work",
+  "detailsMenuEditCopy": "Edit this copy",
+  "detailsRemoveCopy": "Remove this copy",
+  "detailsGiftFrom": "From {name}",
+  "@detailsGiftFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "detailsGiftPurchased": "Purchased",
+  "detailsGiftAFriend": "a friend",
+  "detailsBookNumber": "Book {number}",
+  "@detailsBookNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "detailsNotRated": "Not rated",
+  "detailsSeriesLabel": "Series",
+  "photoSheetTitle": "Add a photo",
+  "photoSheetSubtitle": "Photos of your copy are kept separate from the official cover.",
+  "photoDeleteTitle": "Delete this photo?",
+  "photoDeleteMessage": "The {type} photo of your copy will be removed. The book and its details stay.",
+  "@photoDeleteMessage": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "photoDeleteConfirm": "Delete photo",
+  "removeCopyTitle": "Remove this copy?",
+  "removeCopyMessage": "Your {descriptor} copy of {title} will be deleted, along with its purchase details and photos. {survives}",
+  "@removeCopyMessage": {
+    "placeholders": {
+      "descriptor": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      },
+      "survives": {
+        "type": "String"
+      }
+    }
+  },
+  "removeCopyConfirm": "Remove copy",
+  "survivesOtherCopy": "Your other copy of this edition stays.",
+  "survivesOtherEditions": "{count, plural, =1{Your other edition stays.} other{Your other {count} editions stay.}}",
+  "@survivesOtherEditions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "survivesNothing": "The book will be removed from your library entirely.",
+  "editionsExplainerOne": "One work, one copy. Reading status belongs to the work; everything else belongs to the copy.",
+  "editionsExplainerMany": "One work, {copies} across {editions}. Reading status belongs to the work; everything else belongs to the copy.",
+  "@editionsExplainerMany": {
+    "placeholders": {
+      "copies": {
+        "type": "String"
+      },
+      "editions": {
+        "type": "String"
+      }
+    }
+  },
+  "editionsCopyCount": "{count, plural, =1{1 copy} other{{count} copies}}",
+  "@editionsCopyCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "editionsEditionCount": "{count, plural, =1{1 edition} other{{count} editions}}",
+  "@editionsEditionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "editionsErrorMessage": "These editions couldn't be read from your library.",
+  "editionsAddAnother": "+ Add another edition",
+  "editionsReadingCopy": "Reading copy",
+  "editionsGiftTag": "Gift",
+  "editionsShowAsMain": "Show as main",
+  "editionsAddAnotherCopy": "Add another copy",
+  "editionsNotOwnedYet": "Not owned yet",
+  "editionsUnknownLanguage": "Unknown language",
+  "editionsFirstPublished": "first published {year}",
+  "@editionsFirstPublished": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "editionsFromPerson": "from {name}",
+  "@editionsFromPerson": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "editionsAddCopyTitle": "Add another copy?",
+  "editionsAddCopyMessage": "A second copy of this {format} will be added to your shelves. You can fill in where it came from afterwards.",
+  "@editionsAddCopyMessage": {
+    "placeholders": {
+      "format": {
+        "type": "String"
+      }
+    }
+  },
+  "editionsAddCopyConfirm": "Add copy",
+  "editionsGenericFormat": "edition",
+  "editionsPagesShort": "{count} pp",
+  "@editionsPagesShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readingTitle": "Reading",
+  "readingTabNow": "Currently reading",
+  "readingTabHistory": "History",
+  "readingUpNext": "Up next · from your shelves",
+  "readingUpdatePage": "Update page",
+  "readingMarkFinished": "Mark finished",
+  "readingEmptyTitle": "Nothing on the go",
+  "readingEmptyWithShelves": "Pick something from your shelves and set it to Reading.",
+  "readingEmptyNoShelves": "Add a book to your library, then set it to Reading to track your progress here.",
+  "readingErrorMessage": "Your current reads could not be loaded.",
+  "readingHistoryError": "Your reading history could not be loaded.",
+  "readingHistoryEmptyTitle": "No finished books yet",
+  "readingHistoryEmptyMessage": "When you mark a book as read it appears here, grouped by the month you finished it.",
+  "readingReadInYear": "Read in {year}",
+  "@readingReadInYear": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "readingPagesLabel": "Pages",
+  "readingAvgRating": "Avg rating",
+  "readingPagesOf": "{current} / {total} pages",
+  "@readingPagesOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "readingPagesRead": "pages read",
+  "readingStartedOn": "Started {date}",
+  "@readingStartedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "readingNotStarted": "Not started yet",
+  "readingDaysIn": "{count, plural, =1{1 day in} other{{count} days in}}",
+  "@readingDaysIn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readingToday": "today",
+  "readingFinishedOn": "Finished {date}",
+  "@readingFinishedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "progressStarted": "Started {date}",
+  "@progressStarted": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "progressPagesTotal": "{count} pages",
+  "@progressPagesTotal": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressPercentToGo": "{percent}% · {left} pages to go",
+  "@progressPercentToGo": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "left": {
+        "type": "int"
+      }
+    }
+  },
+  "progressNoPageCount": "Add a page count to this edition to track a percentage",
+  "progressPlusTen": "+10 pages",
+  "progressSave": "Save progress",
+  "progressFinished": "Finished it",
+  "progressGone": "This book is no longer in your library.",
+  "wishlistTitle": "Wishlist",
+  "wishlistHighPriority": "{count} high priority",
+  "@wishlistHighPriority": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wishlistAll": "All {count}",
+  "@wishlistAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wishlistErrorMessage": "Your wishlist could not be loaded.",
+  "wishlistEmptyTitle": "Nothing on the list yet",
+  "wishlistEmptyMessage": "Scan a book you want but do not own, and it lands here instead of on your shelves.",
+  "wishlistNoFilterTitle": "Nothing matches that",
+  "wishlistNoFilterMessage": "Try another filter.",
+  "wishlistDetailError": "This wishlist entry could not be loaded.",
+  "wishlistRemovedTitle": "No longer on your wishlist",
+  "wishlistRemovedMessage": "This entry has been removed.",
+  "wishlistBadge": "WISHLIST",
+  "wishlistAddedOn": "Added {date}",
+  "@wishlistAddedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "wishlistNotePlaceholder": "Tap to add a note about the edition you are after.",
+  "wishlistBought": "I bought it — move to library",
+  "wishlistRemove": "Remove from wishlist",
+  "wishlistMoveTitle": "Move to your library?",
+  "wishlistMoveMessage": "{title} will be added to your shelves as an owned copy and cleared from the wishlist. You can fill in the edition and purchase details next.",
+  "@wishlistMoveMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "wishlistMoveConfirm": "Add to library",
+  "wishlistRemoveTitle": "Remove from wishlist?",
+  "wishlistRemoveMessage": "{title} will be taken off your wishlist, along with the edition you wanted and your note. Your library is not affected.",
+  "@wishlistRemoveMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "wishlistRemoveConfirm": "Remove from wishlist",
+  "wishlistDesiredLanguage": "Desired language",
+  "wishlistDesiredFormat": "Desired format",
+  "wishlistDesiredEdition": "Desired edition",
+  "statsThisYear": "This year",
+  "statsRange": "{from} – {to}",
+  "@statsRange": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "statsBooksRead": "Books read this year",
+  "statsPagesRead": "Pages read",
+  "statsCurrentlyReading": "Currently reading",
+  "statsAverageRating": "Average rating",
+  "statsBooksPerMonth": "Books finished per month",
+  "statsByLanguage": "By language",
+  "statsByGenre": "By genre",
+  "statsMostReadAuthors": "Most read authors",
+  "statsBestMonth": "Best month: {month}, {books} · {pages} pages",
+  "@statsBestMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "books": {
+        "type": "String"
+      },
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "statsNoneYet": "No finished books yet this year.",
+  "statsEmptyTitle": "No finished books yet",
+  "statsEmptyMessage": "Mark a book as read and these figures start filling in. Nothing here is made up — it all comes from your own shelves.",
+  "statsError": "Your statistics could not be calculated.",
+  "statsOther": "Other",
+  "profileTitle": "Profile",
+  "profileMyLibrary": "My library",
+  "profileReadingStatistics": "Reading statistics",
+  "profileStatsSubtitle": "{books} this year · {pages} pages",
+  "@profileStatsSubtitle": {
+    "placeholders": {
+      "books": {
+        "type": "String"
+      },
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "profileStatsFallback": "Calculated from your reading log",
+  "profileGroupLibrary": "Library",
+  "profileGroupData": "Data",
+  "profileGroupApp": "App",
+  "profileShelves": "Shelves & locations",
+  "profileCovers": "Book covers",
+  "profileCoversWithTitles": "With titles",
+  "profileCoversOnly": "Covers only",
+  "profileStatsStrip": "Library stats strip",
+  "profileShown": "Shown",
+  "profileHidden": "Hidden",
+  "profileImportExport": "Import & export",
+  "profileStorage": "Storage",
+  "profileStorageValue": "On this device",
+  "profileSampleLibrary": "Sample library",
+  "profileSampleReset": "Reset",
+  "profileLanguage": "Language",
+  "profileAppearance": "Appearance",
+  "profileAppearanceValue": "Paper",
+  "profileShowOnboarding": "Show onboarding again",
+  "profileVersion": "Version",
+  "profileFooter": "Book Collection {version} · your library lives on your device",
+  "@profileFooter": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "profileShelvesTitle": "Shelves & locations",
+  "profileShelvesSubtitle": "Where your copies live. Set a location on any copy from its edit screen.",
+  "profileShelvesEmpty": "No locations recorded yet.",
+  "profileStorageTitle": "Where your library lives",
+  "profileStorageBody": "Everything — books, editions, copies, reading history and your wishlist — is stored in a local database on this device. It works with no signal, which is what the bookstore flow needs.\n\nThe only time the app reaches the network is to look up a book you have scanned but do not own. Even then, a bundled catalogue answers first.",
+  "profileResetTitle": "Reset to the sample library?",
+  "profileResetMessage": "Every book, edition, copy, note, photo link, reading entry and wishlist item you have added will be deleted and replaced with the sample collection. This cannot be undone.",
+  "profileResetConfirm": "Delete everything and reset",
+  "profileLanguageTitle": "Language",
+  "profileLanguageSubtitle": "Changes the app's own words. Your books keep the languages they were written in.",
+  "importTitle": "Import & export",
+  "importIntro": "Your library is yours. Take it out at any time.",
+  "importSectionExport": "Export",
+  "importSectionImport": "Import",
+  "importCsvLabel": "CSV",
+  "importCsvSubtitle": "Every field, one row per copy",
+  "importJsonLabel": "JSON",
+  "importJsonSubtitle": "Full structure — works, editions and copies",
+  "importPrintableLabel": "Printable list",
+  "importPrintableSubtitle": "A plain list of your shelves",
+  "importNotBuiltTitle": "Not built yet",
+  "importNotBuiltMessage": "Importing from a Goodreads, LibraryThing or CSV file is planned but not implemented. Until then, scanning is the fastest way to fill a shelf — a barcode fills in every field for you.",
+  "importScanInstead": "Scan a book instead",
+  "unknownAuthor": "Unknown author",
+  "unrated": "Unrated",
+  "authorsAndOthers": "{first} & {count} others",
+  "@authorsAndOthers": {
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationDays": "{count, plural, =1{1 day} other{{count} days}}",
+  "@durationDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationToday": "today",
+  "locationHint": "Separate each level with ›",
+  "locationTapToChange": "Tap to change it",
+  "locationNone": "No location yet",
+  "enrichFilledOne": "Filled in the {field}",
+  "@enrichFilledOne": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "enrichFilledMany": "Filled in the {head} and {last}",
+  "@enrichFilledMany": {
+    "placeholders": {
+      "head": {
+        "type": "String"
+      },
+      "last": {
+        "type": "String"
+      }
+    }
+  },
+  "enrichIsbn": "ISBN",
+  "enrichIsbn10": "ISBN-10",
+  "enrichPublisher": "publisher",
+  "enrichPublicationDate": "publication date",
+  "enrichYear": "year",
+  "enrichLanguage": "language",
+  "enrichFormat": "format",
+  "enrichEditionName": "edition name",
+  "enrichPageCount": "page count",
+  "enrichCover": "cover",
+  "enrichDimensions": "dimensions",
+  "enrichWeight": "weight",
+  "enrichTranslator": "translator",
+  "enrichCountry": "country",
+  "enrichIllustrators": "illustrators",
+  "enrichDescription": "description",
+  "enrichOriginalTitle": "original title",
+  "enrichOriginalLanguage": "original language",
+  "enrichSeries": "series",
+  "enrichSeriesNumber": "series number",
+  "enrichFirstPublished": "first published",
+  "enrichGenre": "genre"
+}

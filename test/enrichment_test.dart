@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:drift/native.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:my_library/core/l10n_extensions.dart';
 import 'package:my_library/data/local/database.dart';
 import 'package:my_library/data/metadata/book_metadata.dart';
 import 'package:my_library/data/metadata/local_catalog.dart';
@@ -11,6 +13,7 @@ import 'package:my_library/data/repositories/library_repository.dart';
 import 'package:my_library/data/repositories/scan_service.dart';
 import 'package:my_library/data/repositories/wishlist_repository.dart';
 import 'package:my_library/domain/models/book_draft.dart';
+import 'package:my_library/domain/models/enums.dart';
 
 /// Scanning a book that is already on the shelves should top up whatever its
 /// record is missing — and touch nothing else.
@@ -47,8 +50,8 @@ void main() {
     final result = await scanner.resolveIsbn('9780141036144');
 
     expect(result.enrichment.isNotEmpty, isTrue);
-    expect(result.enrichment.filled, contains('page count'));
-    expect(result.enrichment.filled, contains('publisher'));
+    expect(result.enrichment.filled, contains(EnrichedField.pageCount));
+    expect(result.enrichment.filled, contains(EnrichedField.publisher));
 
     final details = await library.bookDetails(added.workId);
     final edition = details!.primaryEdition!.edition;
@@ -101,7 +104,7 @@ void main() {
     final edition = details!.primaryEdition!.edition;
     expect(edition.coverImagePath, '/covers/my-own-photo.jpg');
     expect(edition.coverUrl, isNull, reason: 'no URL written over a real photo');
-    expect(result.enrichment.filled, isNot(contains('cover')));
+    expect(result.enrichment.filled, isNot(contains(EnrichedField.cover)));
   });
 
   test('a complete record is left alone and needs no lookup', () async {
@@ -156,8 +159,8 @@ void main() {
         ScanVerdict.ownedSameEdition,
         reason: 'it is the same edition, just recorded thinly',
       );
-      expect(result.enrichment.filled, contains('ISBN'));
-      expect(result.enrichment.filled, contains('page count'));
+      expect(result.enrichment.filled, contains(EnrichedField.isbn));
+      expect(result.enrichment.filled, contains(EnrichedField.pageCount));
 
       final details = await library.bookDetails(added.workId);
       final edition = details!.primaryEdition!.edition;
@@ -207,14 +210,20 @@ void main() {
     });
   });
 
-  test('the message names what changed', () {
-    expect(const EnrichmentResult(['cover']).message, 'Filled in the cover');
+  test('the message names what changed', () async {
+    final l10n = await AppL10n.delegate.load(const Locale('en'));
+
     expect(
-      const EnrichmentResult(['cover', 'page count']).message,
+      [EnrichedField.cover].summary(l10n),
+      'Filled in the cover',
+    );
+    expect(
+      [EnrichedField.cover, EnrichedField.pageCount].summary(l10n),
       'Filled in the cover and page count',
     );
     expect(
-      const EnrichmentResult(['cover', 'page count', 'year']).message,
+      [EnrichedField.cover, EnrichedField.pageCount, EnrichedField.year]
+          .summary(l10n),
       'Filled in the cover, page count and year',
     );
   });

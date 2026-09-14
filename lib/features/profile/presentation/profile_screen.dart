@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n_extensions.dart';
 import '../../../core/providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/settings.dart';
@@ -19,6 +20,8 @@ import '../../statistics/presentation/statistics_screen.dart';
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
+  static const _version = '1.0';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
@@ -34,7 +37,7 @@ class ProfileScreen extends ConsumerWidget {
         AppSpacing.navClearance,
       ),
       children: [
-        Text('Profile', style: AppText.screenTitle),
+        Text(context.l10n.profileTitle, style: AppText.screenTitle),
         const SizedBox(height: 20),
         Container(
           padding: const EdgeInsets.all(16),
@@ -64,16 +67,14 @@ class ProfileScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'My library',
+                      context.l10n.profileMyLibrary,
                       style: AppText.sans(size: 15.5, weight: 600),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       Fmt.dotted([
-                        Fmt.pluralBooks(total),
-                        shelves == 0
-                            ? null
-                            : '$shelves ${shelves == 1 ? 'shelf' : 'shelves'}',
+                        context.l10n.bookCount(total),
+                        shelves == 0 ? null : context.l10n.shelfCount(shelves),
                       ]),
                       style: AppText.sans(
                         size: 12.5,
@@ -88,34 +89,39 @@ class ProfileScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 14),
         _TappableCard(
-          title: 'Reading statistics',
+          title: context.l10n.profileReadingStatistics,
           subtitle: stats == null
-              ? 'Calculated from your reading log'
-              : '${stats.booksReadThisYear} '
-                  '${stats.booksReadThisYear == 1 ? 'book' : 'books'} this year '
-                  '· ${Fmt.count(stats.pagesReadThisYear)} pages',
+              ? context.l10n.profileStatsFallback
+              : context.l10n.profileStatsSubtitle(
+                  context.l10n.bookCount(stats.booksReadThisYear),
+                  Fmt.count(stats.pagesReadThisYear),
+                ),
           onTap: () => context.push(Routes.statistics),
         ),
-        const SectionLabel('Library', top: 24),
+        SectionLabel(context.l10n.profileGroupLibrary, top: 24),
         PaperCard(
           children: [
             FieldRow(
-              label: 'Shelves & locations',
+              label: context.l10n.profileShelves,
               value: '$shelves',
               labelWidth: 160,
               verticalPadding: 14,
               onTap: () => _showShelves(context, ref),
             ),
             FieldRow(
-              label: 'Book covers',
-              value: settings.showCaptions ? 'With titles' : 'Covers only',
+              label: context.l10n.profileCovers,
+              value: settings.showCaptions
+                  ? context.l10n.profileCoversWithTitles
+                  : context.l10n.profileCoversOnly,
               labelWidth: 160,
               verticalPadding: 14,
               onTap: () => ref.read(settingsProvider.notifier).toggleCaptions(),
             ),
             FieldRow(
-              label: 'Library stats strip',
-              value: settings.showStatsStrip ? 'Shown' : 'Hidden',
+              label: context.l10n.profileStatsStrip,
+              value: settings.showStatsStrip
+                  ? context.l10n.profileShown
+                  : context.l10n.profileHidden,
               labelWidth: 160,
               verticalPadding: 14,
               onTap: () =>
@@ -124,26 +130,26 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ],
         ),
-        const SectionLabel('Data', top: 24),
+        SectionLabel(context.l10n.profileGroupData, top: 24),
         PaperCard(
           children: [
             FieldRow(
-              label: 'Import & export',
+              label: context.l10n.profileImportExport,
               value: '',
               labelWidth: 160,
               verticalPadding: 14,
               onTap: () => context.push(Routes.importExport),
             ),
             FieldRow(
-              label: 'Storage',
-              value: 'On this device',
+              label: context.l10n.profileStorage,
+              value: context.l10n.profileStorageValue,
               labelWidth: 160,
               verticalPadding: 14,
               onTap: () => _showStorageInfo(context),
             ),
             FieldRow(
-              label: 'Sample library',
-              value: 'Reset',
+              label: context.l10n.profileSampleLibrary,
+              value: context.l10n.profileSampleReset,
               labelWidth: 160,
               verticalPadding: 14,
               onTap: () => _resetSampleLibrary(context, ref),
@@ -151,17 +157,24 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ],
         ),
-        const SectionLabel('App', top: 24),
+        SectionLabel(context.l10n.profileGroupApp, top: 24),
         PaperCard(
           children: [
             FieldRow(
-              label: 'Appearance',
-              value: 'Paper',
+              label: context.l10n.profileLanguage,
+              value: settings.language.endonym,
+              labelWidth: 160,
+              verticalPadding: 14,
+              onTap: () => _showLanguages(context, ref, settings.language),
+            ),
+            FieldRow(
+              label: context.l10n.profileAppearance,
+              value: context.l10n.profileAppearanceValue,
               labelWidth: 160,
               verticalPadding: 14,
             ),
             FieldRow(
-              label: 'Show onboarding again',
+              label: context.l10n.profileShowOnboarding,
               value: '',
               labelWidth: 160,
               verticalPadding: 14,
@@ -171,8 +184,8 @@ class ProfileScreen extends ConsumerWidget {
               },
             ),
             FieldRow(
-              label: 'Version',
-              value: '1.0',
+              label: context.l10n.profileVersion,
+              value: _version,
               labelWidth: 160,
               verticalPadding: 14,
               last: true,
@@ -181,12 +194,54 @@ class ProfileScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 28),
         Text(
-          'Book Collection 1.0 · your library lives on your device',
+          context.l10n.profileFooter(_version),
           textAlign: TextAlign.center,
           style: AppText.sans(size: 11.5, color: AppColors.faintest),
         ),
       ],
     );
+  }
+
+  /// The interface language. Each option is written in itself, so someone who
+  /// has landed in a language they cannot read can still find their way back.
+  Future<void> _showLanguages(
+    BuildContext context,
+    WidgetRef ref,
+    AppLanguage current,
+  ) async {
+    final picked = await showAppSheet<AppLanguage>(
+      context,
+      builder: (sheetContext) => AppSheet(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(context.l10n.profileLanguageTitle, style: AppText.sheetTitle),
+            const SizedBox(height: 6),
+            Text(
+              context.l10n.profileLanguageSubtitle,
+              style: AppText.sans(size: 13, height: 1.5, color: AppColors.muted),
+            ),
+            const SizedBox(height: 14),
+            PaperCard(
+              children: [
+                for (var i = 0; i < AppLanguage.values.length; i++)
+                  FieldRow(
+                    label: AppLanguage.values[i].endonym,
+                    labelWidth: 200,
+                    value: AppLanguage.values[i] == current ? '✓' : '',
+                    verticalPadding: 14,
+                    last: i == AppLanguage.values.length - 1,
+                    onTap: () => Navigator.of(sheetContext)
+                        .pop(AppLanguage.values[i]),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+    if (picked == null || picked == current) return;
+    await ref.read(settingsProvider.notifier).setLanguage(picked);
   }
 
   Future<void> _showShelves(BuildContext context, WidgetRef ref) async {
@@ -208,11 +263,10 @@ class ProfileScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Shelves & locations', style: AppText.sheetTitle),
+            Text(context.l10n.profileShelvesTitle, style: AppText.sheetTitle),
             const SizedBox(height: 6),
             Text(
-              'Where your copies live. Set a location on any copy from its '
-              'edit screen.',
+              context.l10n.profileShelvesSubtitle,
               style: AppText.sans(
                 size: 13,
                 height: 1.5,
@@ -222,7 +276,7 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 14),
             if (sorted.isEmpty)
               Text(
-                'No locations recorded yet.',
+                context.l10n.profileShelvesEmpty,
                 style: AppText.sans(size: 13.5, color: AppColors.faint),
               )
             else
@@ -249,15 +303,13 @@ class ProfileScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Where your library lives', style: AppText.sheetTitle),
+              Text(
+                context.l10n.profileStorageTitle,
+                style: AppText.sheetTitle,
+              ),
               const SizedBox(height: 10),
               Text(
-                'Everything — books, editions, copies, reading history and '
-                'your wishlist — is stored in a local database on this device. '
-                'It works with no signal, which is what the bookstore flow '
-                'needs.\n\nThe only time the app reaches the network is to look '
-                'up a book you have scanned but do not own. Even then, a '
-                'bundled catalogue answers first.',
+                context.l10n.profileStorageBody,
                 style: AppText.sans(
                   size: 13.5,
                   height: 1.6,
@@ -270,13 +322,12 @@ class ProfileScreen extends ConsumerWidget {
       );
 
   Future<void> _resetSampleLibrary(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Reset to the sample library?',
-      message: 'Every book, edition, copy, note, photo link, reading entry and '
-          'wishlist item you have added will be deleted and replaced with the '
-          'sample collection. This cannot be undone.',
-      confirmLabel: 'Delete everything and reset',
+      title: l10n.profileResetTitle,
+      message: l10n.profileResetMessage,
+      confirmLabel: l10n.profileResetConfirm,
     );
     if (!confirmed || !context.mounted) return;
 
@@ -289,7 +340,7 @@ class ProfileScreen extends ConsumerWidget {
       ..invalidate(libraryTotalProvider)
       ..invalidate(filterOptionsProvider)
       ..invalidate(shelfCountProvider);
-    AppToast.show(context, 'Sample library restored');
+    AppToast.show(context, l10n.toastSampleRestored);
   }
 }
 

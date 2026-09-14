@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n_extensions.dart';
 import '../../../core/providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/tokens.dart';
@@ -48,17 +49,17 @@ class WishlistDetailScreen extends ConsumerWidget {
         ),
         error: (error, _) => SafeArea(
           child: ErrorStateView(
-            message: 'This wishlist entry could not be loaded.',
+            message: context.l10n.wishlistDetailError,
             onRetry: () => ref.invalidate(wishlistItemProvider(itemId)),
           ),
         ),
         data: (data) => data == null
             ? SafeArea(
                 child: MessageState(
-                  title: 'No longer on your wishlist',
-                  message: 'This entry has been removed.',
+                  title: context.l10n.wishlistRemovedTitle,
+                  message: context.l10n.wishlistRemovedMessage,
                   titleSize: 22,
-                  primaryLabel: 'Back to wishlist',
+                  primaryLabel: context.l10n.actionBackToWishlist,
                   onPrimary: () => context.go(Routes.wishlist),
                 ),
               )
@@ -74,14 +75,13 @@ class _WishlistDetailBody extends ConsumerWidget {
   final WishlistEntry entry;
 
   Future<void> _moveToLibrary(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Move to your library?',
-      message: '${entry.work.title} will be added to your shelves as an owned '
-          'copy and cleared from the wishlist. You can fill in the edition and '
-          'purchase details next.',
-      confirmLabel: 'Add to library',
-      cancelLabel: 'Not yet',
+      title: l10n.wishlistMoveTitle,
+      message: l10n.wishlistMoveMessage(entry.work.title),
+      confirmLabel: l10n.wishlistMoveConfirm,
+      cancelLabel: l10n.actionNotYet,
       destructive: false,
     );
     if (!confirmed || !context.mounted) return;
@@ -124,25 +124,24 @@ class _WishlistDetailBody extends ConsumerWidget {
 
     if (!context.mounted) return;
 
-    AppToast.show(context, 'Moved to your library');
+    AppToast.show(context, l10n.toastMovedToLibrary);
     context.go(Routes.library);
     context.push(Routes.bookDetails(workId));
   }
 
   Future<void> _remove(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Remove from wishlist?',
-      message: '${entry.work.title} will be taken off your wishlist, along '
-          'with the edition you wanted and your note. Your library is not '
-          'affected.',
-      confirmLabel: 'Remove from wishlist',
+      title: l10n.wishlistRemoveTitle,
+      message: l10n.wishlistRemoveMessage(entry.work.title),
+      confirmLabel: l10n.wishlistRemoveConfirm,
     );
     if (!confirmed || !context.mounted) return;
 
     await ref.read(wishlistRepositoryProvider).remove(entry.item.id);
     if (!context.mounted) return;
-    AppToast.show(context, 'Removed from your wishlist');
+    AppToast.show(context, l10n.toastRemovedFromWishlist);
     context.go(Routes.wishlist);
   }
 
@@ -153,13 +152,13 @@ class _WishlistDetailBody extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Priority', style: AppText.sheetTitle),
+            Text(context.l10n.fieldPriority, style: AppText.sheetTitle),
             const SizedBox(height: 14),
             ChipWrap(
               children: [
                 for (final priority in Priority.values)
                   AppChip(
-                    label: priority.label,
+                    label: priority.display(context.l10n),
                     selected: entry.priority == priority,
                     onTap: () => Navigator.of(sheetContext).pop(priority),
                   ),
@@ -223,7 +222,7 @@ class _WishlistDetailBody extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               PrimaryButton(
-                label: 'Save',
+                label: context.l10n.actionSave,
                 onPressed: () =>
                     Navigator.of(sheetContext).pop(controller.text.trim()),
               ),
@@ -297,7 +296,7 @@ class _WishlistDetailBody extends ConsumerWidget {
                     child: Align(
                       widthFactor: 1,
                       child: Text(
-                      'WISHLIST',
+                      context.l10n.wishlistBadge,
                       style: AppText.sans(
                         size: 11,
                         weight: 700,
@@ -316,14 +315,14 @@ class _WishlistDetailBody extends ConsumerWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    Fmt.authors(entry.work.authors),
+                    context.l10n.authorsOf(entry.work.authors),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.sans(size: 13.5, color: AppColors.muted),
                   ),
                   const SizedBox(height: 9),
                   Text(
-                    'Added ${Fmt.date(item.dateAdded)}',
+                    context.l10n.wishlistAddedOn(Fmt.date(item.dateAdded)),
                     style: AppText.sans(size: 11.5, color: AppColors.faint),
                   ),
                 ],
@@ -331,18 +330,18 @@ class _WishlistDetailBody extends ConsumerWidget {
             ),
           ],
         ),
-        const SectionLabel('What I want'),
+        SectionLabel(context.l10n.sectionWhatIWant),
         PaperCard(
           children: [
             FieldRow(
-              label: 'Language',
+              label: context.l10n.fieldLanguage,
               labelWidth: 112,
               value: item.desiredLanguage ?? '',
               verticalPadding: 12,
               onTap: () => _editField(
                 context,
                 ref,
-                label: 'Desired language',
+                label: context.l10n.wishlistDesiredLanguage,
                 value: item.desiredLanguage,
                 save: (v) =>
                     repository.update(item.id, desiredLanguage: v,
@@ -352,14 +351,14 @@ class _WishlistDetailBody extends ConsumerWidget {
               ),
             ),
             FieldRow(
-              label: 'Format',
+              label: context.l10n.fieldFormat,
               labelWidth: 112,
               value: item.desiredFormat ?? '',
               verticalPadding: 12,
               onTap: () => _editField(
                 context,
                 ref,
-                label: 'Desired format',
+                label: context.l10n.wishlistDesiredFormat,
                 value: item.desiredFormat,
                 save: (v) => repository.update(item.id,
                     desiredLanguage: item.desiredLanguage,
@@ -369,14 +368,14 @@ class _WishlistDetailBody extends ConsumerWidget {
               ),
             ),
             FieldRow(
-              label: 'Edition',
+              label: context.l10n.fieldEdition,
               labelWidth: 112,
               value: item.desiredEdition ?? '',
               verticalPadding: 12,
               onTap: () => _editField(
                 context,
                 ref,
-                label: 'Desired edition',
+                label: context.l10n.wishlistDesiredEdition,
                 value: item.desiredEdition,
                 save: (v) => repository.update(item.id,
                     desiredLanguage: item.desiredLanguage,
@@ -386,14 +385,14 @@ class _WishlistDetailBody extends ConsumerWidget {
               ),
             ),
             FieldRow(
-              label: 'Priority',
+              label: context.l10n.fieldPriority,
               labelWidth: 112,
-              value: entry.priority.label,
+              value: entry.priority.display(context.l10n),
               verticalPadding: 12,
               onTap: () => _editPriority(context, ref),
             ),
             FieldRow(
-              label: 'Added',
+              label: context.l10n.fieldAdded,
               labelWidth: 112,
               value: Fmt.date(item.dateAdded),
               verticalPadding: 12,
@@ -404,20 +403,20 @@ class _WishlistDetailBody extends ConsumerWidget {
             if (entry.edition != null) ...[
               if (entry.edition!.pageCount != null)
                 FieldRow(
-                  label: 'Pages',
+                  label: context.l10n.fieldPages,
                   labelWidth: 112,
                   value: '${entry.edition!.pageCount}',
                   verticalPadding: 12,
                 ),
               if (entry.edition!.publishedYear != null)
                 FieldRow(
-                  label: 'Published',
+                  label: context.l10n.fieldPublished,
                   labelWidth: 112,
                   value: '${entry.edition!.publishedYear}',
                   verticalPadding: 12,
                 ),
               FieldRow(
-                label: 'ISBN',
+                label: context.l10n.fieldIsbn,
                 labelWidth: 112,
                 value: entry.edition!.isbn13 == null
                     ? ''
@@ -433,7 +432,7 @@ class _WishlistDetailBody extends ConsumerWidget {
           onTap: () => _editField(
             context,
             ref,
-            label: 'Note',
+            label: context.l10n.sectionNote,
             value: item.notes,
             maxLines: 5,
             save: (v) => repository.update(item.id,
@@ -443,20 +442,20 @@ class _WishlistDetailBody extends ConsumerWidget {
                 notes: v),
           ),
           child: NoteBlock(
-            label: 'Note',
+            label: context.l10n.sectionNote,
             text: (item.notes ?? '').trim().isEmpty
-                ? 'Tap to add a note about the edition you are after.'
+                ? context.l10n.wishlistNotePlaceholder
                 : item.notes!,
           ),
         ),
         const SizedBox(height: 22),
         PrimaryButton(
-          label: 'I bought it — move to library',
+          label: context.l10n.wishlistBought,
           onPressed: () => _moveToLibrary(context, ref),
         ),
         const SizedBox(height: 9),
         SecondaryButton(
-          label: 'Remove from wishlist',
+          label: context.l10n.wishlistRemove,
           foreground: const Color(0xFF5A5248),
           onPressed: () => _remove(context, ref),
         ),

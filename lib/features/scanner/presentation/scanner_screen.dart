@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../../core/l10n_extensions.dart';
 import '../../../core/providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/tokens.dart';
@@ -295,28 +296,26 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen>
                 },
                 onManual: _enterManually,
               ),
-            _CameraState.starting => const _CameraMessage(
-                title: 'Starting the camera…',
-                message: 'One moment.',
+            _CameraState.starting => _CameraMessage(
+                title: context.l10n.scannerStartingTitle,
+                message: context.l10n.scannerStartingMessage,
                 busy: true,
               ),
             _CameraState.denied => _CameraMessage(
-                title: 'Camera access is off',
-                message: 'Scanning needs the camera. Turn it on in Settings, '
-                    'or type the 13 digits printed under the barcode.',
-                primaryLabel: 'Open Settings',
+                title: context.l10n.scannerDeniedTitle,
+                message: context.l10n.scannerDeniedMessage,
+                primaryLabel: context.l10n.scannerOpenSettings,
                 onPrimary: openAppSettings,
-                secondaryLabel: 'Enter ISBN manually',
+                secondaryLabel: context.l10n.actionEnterIsbnManually,
                 onSecondary: _enterManually,
                 onClose: () => context.pop(),
               ),
             _CameraState.unsupported => _CameraMessage(
-                title: 'No camera here',
-                message: 'This device cannot scan barcodes. You can still add '
-                    'books by ISBN or by hand.',
-                primaryLabel: 'Enter ISBN manually',
+                title: context.l10n.scannerUnsupportedTitle,
+                message: context.l10n.scannerUnsupportedMessage,
+                primaryLabel: context.l10n.actionEnterIsbnManually,
                 onPrimary: _enterManually,
-                secondaryLabel: 'Add book by hand',
+                secondaryLabel: context.l10n.scannerAddByHand,
                 onSecondary: () {
                   context.pop();
                   context.push(Routes.addBook);
@@ -324,12 +323,11 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen>
                 onClose: () => context.pop(),
               ),
             _CameraState.failed => _CameraMessage(
-                title: "The camera didn't start",
-                message: 'Something went wrong opening the camera. Try again, '
-                    'or enter the ISBN yourself.',
-                primaryLabel: 'Try again',
+                title: context.l10n.scannerFailedTitle,
+                message: context.l10n.scannerFailedMessage,
+                primaryLabel: context.l10n.actionTryAgain,
                 onPrimary: _startCamera,
-                secondaryLabel: 'Enter ISBN manually',
+                secondaryLabel: context.l10n.actionEnterIsbnManually,
                 onSecondary: _enterManually,
                 onClose: () => context.pop(),
               ),
@@ -433,7 +431,9 @@ class _ScannerChrome extends StatelessWidget {
                           ),
                           const SizedBox(width: 10),
                           Text(
-                            captureOnly ? 'Got it' : 'Looking it up…',
+                            captureOnly
+                                ? context.l10n.scannerGotIt
+                                : context.l10n.scannerLookingUp,
                             style: AppText.sans(
                               size: 13.5,
                               weight: 500,
@@ -454,8 +454,8 @@ class _ScannerChrome extends StatelessWidget {
                 children: [
                   Text(
                     captureOnly
-                        ? 'Scan the ISBN'
-                        : 'Point at the barcode',
+                        ? context.l10n.scannerIsbnTitle
+                        : context.l10n.scannerTitle,
                     style: AppText.serif(
                       size: 19,
                       color: AppColors.onboardingText,
@@ -464,8 +464,8 @@ class _ScannerChrome extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     captureOnly
-                        ? "We'll fill in the number for you"
-                        : 'Usually on the back cover',
+                        ? context.l10n.scannerIsbnSubtitle
+                        : context.l10n.scannerSubtitle,
                     style: AppText.sans(
                       size: 12.5,
                       color: const Color(0xFF8F857A),
@@ -508,7 +508,7 @@ class _ScannerChrome extends StatelessWidget {
                   if (!captureOnly) ...[
                     Expanded(
                       child: ScannerButton(
-                        label: 'Search by title',
+                        label: context.l10n.scannerSearchByTitle,
                         onTap: onSearch,
                       ),
                     ),
@@ -516,7 +516,7 @@ class _ScannerChrome extends StatelessWidget {
                   ],
                   Expanded(
                     child: ScannerButton(
-                      label: 'Type the number',
+                      label: context.l10n.scannerTypeTheNumber,
                       onTap: onManual,
                     ),
                   ),
@@ -700,9 +700,8 @@ class _ManualIsbnSheetState extends State<_ManualIsbnSheet> {
     if (!Isbn.isValid(raw)) {
       setState(
         () => _error = raw.isEmpty
-            ? 'Enter the number printed under the barcode.'
-            : "That doesn't look like a valid ISBN. Check the digits and try "
-                'again.',
+            ? context.l10n.isbnSheetEmpty
+            : context.l10n.isbnSheetInvalid,
       );
       return;
     }
@@ -717,10 +716,10 @@ class _ManualIsbnSheetState extends State<_ManualIsbnSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Enter ISBN', style: AppText.sheetTitle),
+            Text(context.l10n.isbnSheetTitle, style: AppText.sheetTitle),
             const SizedBox(height: 6),
             Text(
-              'The 10 or 13 digits printed under the barcode.',
+              context.l10n.isbnSheetSubtitle,
               style: AppText.sans(size: 13, color: AppColors.muted),
             ),
             const SizedBox(height: 16),
@@ -783,7 +782,9 @@ class _ManualIsbnSheetState extends State<_ManualIsbnSheet> {
             ],
             const SizedBox(height: 16),
             PrimaryButton(
-              label: widget.captureOnly ? 'Use this number' : 'Look it up',
+              label: widget.captureOnly
+                  ? context.l10n.isbnSheetUseNumber
+                  : context.l10n.isbnSheetLookUp,
               onPressed: _submit,
             ),
             // In capture mode the editor is already open behind this screen;
@@ -791,7 +792,7 @@ class _ManualIsbnSheetState extends State<_ManualIsbnSheet> {
             if (!widget.captureOnly) ...[
               const SizedBox(height: 9),
               SecondaryButton(
-                label: 'Add without an ISBN',
+                label: context.l10n.isbnSheetAddWithout,
                 height: 50,
                 fontSize: 15,
                 onPressed: () {

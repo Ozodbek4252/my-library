@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/l10n_extensions.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/theme/tokens.dart';
@@ -52,6 +53,7 @@ class _ScanResultSheetState extends ConsumerState<ScanResultSheet> {
       return;
     }
 
+    final l10n = context.l10n;
     setState(() => _busy = true);
     try {
       // A scanned edition already on the shelves becomes a second copy of it;
@@ -63,14 +65,14 @@ class _ScanResultSheetState extends ConsumerState<ScanResultSheet> {
               result.matchedEdition!.id,
               CopyDraft(ownership: Ownership.owned),
             );
-        message = 'Another copy added to your library';
+        message = l10n.toastAnotherCopyAdded;
       } else {
         final outcome = await ref.read(databaseProvider).addBook(draft);
         message = outcome.clearedWishlist
-            ? 'Added to your library · cleared from wishlist'
+            ? l10n.toastAddedClearedWishlist
             : outcome.createdWork
-                ? 'Added to your library'
-                : 'Edition added to your library';
+                ? l10n.toastAddedToLibrary
+                : l10n.toastEditionAdded;
       }
 
       if (!mounted) return;
@@ -79,21 +81,22 @@ class _ScanResultSheetState extends ConsumerState<ScanResultSheet> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _busy = false);
-      AppToast.show(context, "Couldn't add this book", success: false);
+      AppToast.show(context, l10n.toastCouldNotAdd, success: false);
     }
   }
 
   Future<void> _wishlist() async {
+    final l10n = context.l10n;
     setState(() => _busy = true);
     try {
       await ref.read(wishlistRepositoryProvider).add(draft: result.toDraft());
       if (!mounted) return;
-      AppToast.show(context, 'Added to your wishlist');
+      AppToast.show(context, l10n.toastAddedToWishlist);
       Navigator.of(context).pop(ScanNextAction.close);
     } catch (_) {
       if (!mounted) return;
       setState(() => _busy = false);
-      AppToast.show(context, "Couldn't add to your wishlist", success: false);
+      AppToast.show(context, l10n.toastCouldNotWishlist, success: false);
     }
   }
 
@@ -124,25 +127,27 @@ class _ScanResultSheetState extends ConsumerState<ScanResultSheet> {
           if (!owned && result.isWishlisted) ...[
             const SizedBox(height: 16),
             _InfoNote(
-              text: 'On your wishlist since '
-                  '${Fmt.monthShort(result.wishlistItem!.dateAdded)} — adding '
-                  'it will clear it from there.',
+              text: context.l10n.scanWishlistNote(
+                Fmt.monthShort(result.wishlistItem!.dateAdded),
+              ),
             ),
           ],
           if (result.enrichment.isNotEmpty) ...[
             const SizedBox(height: 16),
             _InfoNote(
               icon: AppIcons.check,
-              text: '${result.enrichment.message} from this scan. Nothing you '
-                  'had already entered was changed.',
+              text: context.l10n.scanEnrichedNote(
+                result.enrichment.filled.summary(context.l10n),
+              ),
             ),
           ],
           const SizedBox(height: 18),
           PrimaryButton(
             label: switch (result.verdict) {
-              ScanVerdict.ownedSameEdition => 'Add another copy',
-              ScanVerdict.ownedOtherEdition => 'Add as another edition',
-              ScanVerdict.notInLibrary => 'Add to library',
+              ScanVerdict.ownedSameEdition => context.l10n.scanAddAnotherCopy,
+              ScanVerdict.ownedOtherEdition =>
+                context.l10n.scanAddAsAnotherEdition,
+              ScanVerdict.notInLibrary => context.l10n.scanAddToLibrary,
             },
             busy: _busy,
             onPressed: _busy ? null : _add,
@@ -152,7 +157,9 @@ class _ScanResultSheetState extends ConsumerState<ScanResultSheet> {
             children: [
               Expanded(
                 child: SecondaryButton(
-                  label: owned ? 'Open book' : 'Add with details',
+                  label: owned
+                      ? context.l10n.actionOpenBook
+                      : context.l10n.scanAddWithDetails,
                   onPressed: _busy
                       ? null
                       : () {
@@ -168,7 +175,7 @@ class _ScanResultSheetState extends ConsumerState<ScanResultSheet> {
               const SizedBox(width: 9),
               Expanded(
                 child: SecondaryButton(
-                  label: 'Scan next',
+                  label: context.l10n.actionScanNext,
                   onPressed: _busy
                       ? null
                       : () => Navigator.of(context).pop(ScanNextAction.scanNext),
@@ -179,7 +186,9 @@ class _ScanResultSheetState extends ConsumerState<ScanResultSheet> {
           if (!owned) ...[
             const SizedBox(height: 9),
             SecondaryButton(
-              label: result.isWishlisted ? 'Already wishlisted' : 'Wishlist it',
+              label: result.isWishlisted
+                  ? context.l10n.scanAlreadyWishlisted
+                  : context.l10n.scanWishlistIt,
               onPressed: _busy || result.isWishlisted ? null : _wishlist,
             ),
           ],
@@ -188,6 +197,22 @@ class _ScanResultSheetState extends ConsumerState<ScanResultSheet> {
     );
   }
 }
+
+String _failureTitle(AppL10n l10n, ScanFailure failure) => switch (failure.kind) {
+      ScanFailureKind.invalidBarcode => l10n.scanFailBarcodeTitle,
+      ScanFailureKind.notFound => l10n.scanFailNotFoundTitle,
+      ScanFailureKind.network => l10n.scanFailNetworkTitle,
+      ScanFailureKind.unknown => l10n.scanFailUnknownTitle,
+    };
+
+String _failureMessage(AppL10n l10n, ScanFailure failure) =>
+    switch (failure.kind) {
+      ScanFailureKind.invalidBarcode => l10n.scanFailBarcodeMessage,
+      ScanFailureKind.notFound =>
+        l10n.scanFailNotFoundMessage(failure.isbn ?? l10n.scanFailThatCode),
+      ScanFailureKind.network => l10n.scanFailNetworkMessage,
+      ScanFailureKind.unknown => l10n.scanFailUnknownMessage,
+    };
 
 class _VerdictBanner extends StatelessWidget {
   const _VerdictBanner({required this.owned});
@@ -216,7 +241,9 @@ class _VerdictBanner extends StatelessWidget {
           const SizedBox(width: 9),
           Expanded(
             child: Text(
-              owned ? 'You already own this book' : 'Not in your library yet',
+              owned
+                  ? context.l10n.scanOwnedBanner
+                  : context.l10n.scanNewBanner,
               style: AppText.sans(
                 size: 15.5,
                 weight: 600,
@@ -276,7 +303,7 @@ class _BookBlock extends StatelessWidget {
               ),
               const SizedBox(height: 3),
               Text(
-                Fmt.authors(metadata.authors),
+                context.l10n.authorsOf(metadata.authors),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: AppText.sans(size: 14, color: AppColors.muted),
@@ -289,7 +316,8 @@ class _BookBlock extends StatelessWidget {
                   children: [
                     AppPill(
                       label: Fmt.dotted([
-                        ReadingStatus.fromName(work.readingStatus).label,
+                        ReadingStatus.fromName(work.readingStatus)
+                            .display(context.l10n),
                         work.finishDate == null
                             ? null
                             : Fmt.monthShort(work.finishDate!),
@@ -306,7 +334,7 @@ class _BookBlock extends StatelessWidget {
                     ),
                     if ((work.rating ?? 0) > 0)
                       AppPill(
-                        label: Fmt.rating(work.rating),
+                        label: context.l10n.ratingOf(work.rating),
                         background: const Color(0xFFEFE7D8),
                         foreground: const Color(0xFF7A6136),
                         height: 26,
@@ -337,7 +365,7 @@ class _BookBlock extends StatelessWidget {
               if (details != null && details.editions.length > 1) ...[
                 const SizedBox(height: 10),
                 Text(
-                  '${details.editions.length} editions on your shelves',
+                  context.l10n.scanEditionsOnShelves(details.editions.length),
                   style: AppText.sans(
                     size: 12,
                     height: 1.45,
@@ -370,7 +398,7 @@ class _CopiesCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
             color: AppColors.paperSunken,
             child: Text(
-              'YOUR COPIES',
+              context.l10n.scanYourCopies,
               style: AppText.sans(
                 size: 10,
                 weight: 600,
@@ -440,7 +468,7 @@ class _CopyRow extends StatelessWidget {
               children: [
                 Text(
                   edition.descriptor.isEmpty
-                      ? 'Edition details missing'
+                      ? context.l10n.scanEditionMissing
                       : edition.descriptor,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -450,10 +478,12 @@ class _CopyRow extends StatelessWidget {
                 Text(
                   Fmt.dotted([
                     e.publishedYear?.toString(),
-                    e.pageCount == null ? null : '${e.pageCount} pp',
+                    e.pageCount == null
+                        ? null
+                        : context.l10n.editionsPagesShort(e.pageCount!),
                     location,
                     edition.copies.length > 1
-                        ? '${edition.copies.length} copies'
+                        ? context.l10n.scanCopiesSuffix(edition.copies.length)
                         : null,
                   ]),
                   maxLines: 1,
@@ -488,7 +518,7 @@ class _ScannedCopyCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
             color: AppColors.progressBg,
             child: Text(
-              'SCANNED COPY',
+              context.l10n.scanScannedCopy,
               style: AppText.sans(
                 size: 10,
                 weight: 600,
@@ -615,12 +645,12 @@ class ScanErrorSheet extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      failure.title,
+                      _failureTitle(context.l10n, failure),
                       style: AppText.serif(size: 22, height: 1.2),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      failure.message,
+                      _failureMessage(context.l10n, failure),
                       style: AppText.sans(
                         size: 13.5,
                         height: 1.5,
@@ -633,10 +663,14 @@ class ScanErrorSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          PrimaryButton(label: 'Try again', height: 50, onPressed: onRetry),
+          PrimaryButton(
+            label: context.l10n.actionTryAgain,
+            height: 50,
+            onPressed: onRetry,
+          ),
           const SizedBox(height: 9),
           SecondaryButton(
-            label: 'Enter ISBN manually',
+            label: context.l10n.actionEnterIsbnManually,
             height: 50,
             fontSize: 15,
             onPressed: onManual,

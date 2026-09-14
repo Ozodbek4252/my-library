@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
@@ -18,6 +19,10 @@ Future<void> main() async {
       statusBarBrightness: Brightness.light,
     ),
   );
+
+  // Month and day names for every language the app offers. Without this the
+  // first date formatted in Uzbek or Russian throws before anything is drawn.
+  await initializeDateFormatting();
 
   final database = AppDatabase();
   await database.ensureIndexes();

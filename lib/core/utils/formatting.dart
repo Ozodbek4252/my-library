@@ -1,16 +1,48 @@
 import 'package:intl/intl.dart';
 
-final _day = DateFormat('d MMM yyyy');
-final _shortDay = DateFormat('d MMM');
-final _monthYear = DateFormat('MMMM yyyy');
-final _monthShort = DateFormat('MMM yyyy');
-final _thousands = NumberFormat('#,###');
-
+/// Dates and numbers, formatted for whichever language the app is in.
+///
+/// The locale is set once when the interface language changes rather than
+/// threaded through every call site, because every one of these is a leaf of
+/// the widget tree and a parameter on all of them would drown the screens.
 abstract final class Fmt {
+  static String _locale = 'en';
+
+  /// Called when the interface language changes.
+  ///
+  /// Date symbols are loaded once at startup. If they are not there — an
+  /// entry point that skipped `initializeDateFormatting`, or a language intl
+  /// has no data for — dates keep the formats they had. Wrong month names are
+  /// a blemish; a blank app is not.
+  static set locale(String value) {
+    if (_locale == value) return;
+    try {
+      _day = DateFormat.yMMMd(value);
+      _shortDay = DateFormat.MMMd(value);
+      _monthYear = DateFormat.yMMMM(value);
+      _monthShort = DateFormat.yMMM(value);
+      _monthName = DateFormat.MMMM(value);
+      _thousands = NumberFormat('#,###', value);
+      _locale = value;
+    } catch (_) {
+      // Keep the formats already in place.
+    }
+  }
+
+  static String get locale => _locale;
+
+  static DateFormat _day = DateFormat.yMMMd('en');
+  static DateFormat _shortDay = DateFormat.MMMd('en');
+  static DateFormat _monthYear = DateFormat.yMMMM('en');
+  static DateFormat _monthShort = DateFormat.yMMM('en');
+  static DateFormat _monthName = DateFormat.MMMM('en');
+  static NumberFormat _thousands = NumberFormat('#,###', 'en');
+
   static String date(DateTime? d) => d == null ? '—' : _day.format(d);
   static String shortDate(DateTime? d) => d == null ? '—' : _shortDay.format(d);
   static String monthYear(DateTime d) => _monthYear.format(d);
   static String monthShort(DateTime d) => _monthShort.format(d);
+  static String monthName(DateTime d) => _monthName.format(d);
   static String count(num n) => _thousands.format(n);
 
   static String money(double? amount, String? currency) {
@@ -20,6 +52,7 @@ abstract final class Fmt {
       'USD' => r'$',
       'EUR' => '€',
       'RUB' => '₽',
+      'UZS' => "so'm",
       _ => '',
     };
     final value = amount == amount.roundToDouble() && amount >= 1000
@@ -28,30 +61,15 @@ abstract final class Fmt {
     return symbol.isEmpty ? '$value ${currency ?? ''}'.trim() : '$symbol$value';
   }
 
-  static String rating(double? r) =>
-      r == null || r == 0 ? 'Unrated' : '★ ${r.toStringAsFixed(1)}';
-
   static String stars(double? r) =>
       r == null || r == 0 ? '' : '★' * r.round().clamp(0, 5);
 
-  /// "12 days in" / "3 days" — how long a read took or has been going.
-  static String durationDays(DateTime from, DateTime to) {
-    final days = to.difference(from).inDays;
-    if (days <= 0) return 'today';
-    return days == 1 ? '1 day' : '$days days';
-  }
+  /// How many whole days lie between two moments.
+  static int daysBetween(DateTime from, DateTime to) => to.difference(from).inDays;
 
   /// Joins non-empty parts with the design's middle dot separator.
   static String dotted(Iterable<String?> parts) =>
       parts.where((p) => p != null && p.trim().isNotEmpty).join(' · ');
-
-  /// Author list as shown in the UI. Long lists collapse rather than wrap
-  /// endlessly across a card.
-  static String authors(List<String> authors) {
-    if (authors.isEmpty) return 'Unknown author';
-    if (authors.length <= 2) return authors.join(' & ');
-    return '${authors.first} & ${authors.length - 1} others';
-  }
 
   /// Surname used for the uppercase line on a cover placeholder.
   static String surname(List<String> authors) {
@@ -59,6 +77,4 @@ abstract final class Fmt {
     final parts = authors.first.trim().split(RegExp(r'\s+'));
     return parts.isEmpty ? '' : parts.last;
   }
-
-  static String pluralBooks(int n) => n == 1 ? '1 book' : '$n books';
 }

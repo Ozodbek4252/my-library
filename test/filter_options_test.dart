@@ -21,7 +21,10 @@ void main() {
     expect(options[FilterGroup.publisher], contains('Penguin'));
     expect(options[FilterGroup.author], contains('George Orwell'));
     expect(options[FilterGroup.format], contains('Paperback'));
-    expect(options[FilterGroup.status], contains('Read'));
+    // Statuses come back as stable enum names, not as words: a filter picked
+    // in one language must still match after the interface is switched.
+    expect(options[FilterGroup.status], contains(ReadingStatus.read.name));
+    expect(options[FilterGroup.status], isNot(contains('Read')));
 
     await db.close();
   });

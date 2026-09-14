@@ -148,7 +148,9 @@ class StatisticsRepository {
       if (rest > 0) {
         slices.add(
           CountSlice(
+            // Named in the UI, where the interface language is known.
             label: 'Other',
+            isOther: true,
             count: rest,
             percent: total == 0 ? 0 : rest / total * 100,
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/l10n_extensions.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/theme/typography.dart';
 import '../../../../core/utils/formatting.dart';
@@ -61,7 +62,9 @@ class CoverStatusBadge extends StatelessWidget {
           child: Center(
             widthFactor: 1,
             child: Text(
-              status == ReadingStatus.reading ? 'Reading' : 'Re-read',
+              status == ReadingStatus.reading
+                  ? context.l10n.statusReading
+                  : context.l10n.statusRereadBadge,
               style: AppText.sans(
                 size: 8.5,
                 weight: 700,
@@ -133,7 +136,7 @@ class BookGridCell extends StatelessWidget {
             ),
             const SizedBox(height: 1),
             Text(
-              entry.authorLine,
+              context.l10n.authorsOf(entry.work.authors),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AppText.sans(size: 10.5, color: AppColors.muted2),
@@ -201,7 +204,7 @@ class BookListRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    entry.authorLine,
+                    context.l10n.authorsOf(entry.work.authors),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.listSecondary,
@@ -219,7 +222,7 @@ class BookListRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            AppPill.status(entry.status),
+            AppPill.status(entry.status, l10n: context.l10n),
           ],
         ),
       ),

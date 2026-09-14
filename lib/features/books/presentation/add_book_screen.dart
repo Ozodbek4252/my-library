@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n_extensions.dart';
 import '../../../core/providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/utils/cover_picker.dart';
@@ -136,9 +137,10 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
   /// Filling in an ISBN by hand should still pull the metadata — the design's
   /// "Scanning fills every field below automatically" applies here too.
   Future<void> _lookupIsbn() async {
+    final l10n = context.l10n;
     final raw = _controller('isbn', _draft.isbnDisplay).text;
     if (!Isbn.isValid(raw)) {
-      AppToast.show(context, 'That ISBN is not valid', success: false);
+      AppToast.show(context, l10n.isbnInvalidToast, success: false);
       return;
     }
 
@@ -156,15 +158,15 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
         _draft = found;
         _controllers.clear();
       });
-      AppToast.show(context, 'Filled in from ${metadata.title}');
+      AppToast.show(context, l10n.toastFilledFromIsbn(metadata.title));
     } on MetadataException catch (e) {
       if (!mounted) return;
       AppToast.show(
         context,
         switch (e.failure) {
-          MetadataFailure.notFound => "We don't know that ISBN — fill it in yourself",
-          MetadataFailure.network => 'No connection — fill it in yourself',
-          _ => 'Lookup failed — fill it in yourself',
+          MetadataFailure.notFound => l10n.toastIsbnNotFound,
+          MetadataFailure.network => l10n.toastIsbnOffline,
+          _ => l10n.toastIsbnLookupFailed,
         },
         success: false,
       );
@@ -214,9 +216,10 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
   }
 
   Future<void> _save() async {
+    final l10n = context.l10n;
     _collect();
     if (!_draft.isValid) {
-      AppToast.show(context, 'A title is required', success: false);
+      AppToast.show(context, l10n.toastTitleRequired, success: false);
       return;
     }
 
@@ -236,7 +239,7 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
       if (_isEditing) {
         await db.saveDraft(_draft);
         if (!mounted) return;
-        AppToast.show(context, 'Changes saved');
+        AppToast.show(context, l10n.toastChangesSaved);
         context.pop();
         return;
       }
@@ -244,7 +247,7 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
       if (_draft.ownership == Ownership.wishlist) {
         await ref.read(wishlistRepositoryProvider).add(draft: _draft);
         if (!mounted) return;
-        AppToast.show(context, 'Added to your wishlist');
+        AppToast.show(context, l10n.toastAddedToWishlist);
         context.pop();
         return;
       }
@@ -254,10 +257,10 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
       AppToast.show(
         context,
         result.clearedWishlist
-            ? 'Added to your library · cleared from wishlist'
+            ? l10n.toastAddedClearedWishlist
             : result.createdEdition && !result.createdWork
-                ? 'Edition added to your library'
-                : 'Added to your library',
+                ? l10n.toastEditionAdded
+                : l10n.toastAddedToLibrary,
       );
       context.pop();
       await _offerToShare();
@@ -267,7 +270,7 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
       _saved = false;
       if (!mounted) return;
       setState(() => _saving = false);
-      AppToast.show(context, "Couldn't save this book", success: false);
+      AppToast.show(context, l10n.toastCouldNotSave, success: false);
     }
   }
 
@@ -287,6 +290,7 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
   /// The picked file lives in a cache the system may clear, so it is copied
   /// into the app's own storage before it is recorded.
   Future<void> _pickCover() async {
+    final l10n = context.l10n;
     final existing = _draft.coverImagePath;
 
     final action = await showAppSheet<_CoverAction>(
@@ -295,12 +299,10 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Cover', style: AppText.sheetTitle),
+            Text(context.l10n.coverSheetTitle, style: AppText.sheetTitle),
             const SizedBox(height: 6),
             Text(
-              'Photograph the book, or pick a picture you already have. You '
-              'frame it next — drag any edge, or start from the 2:3 a cover '
-              'is shown at.',
+              context.l10n.coverSheetSubtitle,
               style: AppText.sans(
                 size: 13,
                 height: 1.5,
@@ -309,13 +311,13 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
             ),
             const SizedBox(height: 16),
             PrimaryButton(
-              label: 'Take a photo',
+              label: context.l10n.coverTakePhoto,
               onPressed: () =>
                   Navigator.of(sheetContext).pop(_CoverAction.camera),
             ),
             const SizedBox(height: 9),
             SecondaryButton(
-              label: 'Choose a picture',
+              label: context.l10n.coverChoosePicture,
               height: 50,
               fontSize: 15,
               onPressed: () =>
@@ -324,7 +326,7 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
             if (existing != null && existing.isNotEmpty) ...[
               const SizedBox(height: 9),
               SecondaryButton(
-                label: 'Adjust the crop',
+                label: context.l10n.coverAdjustCrop,
                 height: 50,
                 fontSize: 15,
                 onPressed: () =>
@@ -332,7 +334,7 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
               ),
               const SizedBox(height: 9),
               DestructiveButton(
-                label: 'Remove cover',
+                label: context.l10n.coverRemove,
                 onPressed: () =>
                     Navigator.of(sheetContext).pop(_CoverAction.remove),
               ),
@@ -359,8 +361,9 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
       // Re-framing works on the file already stored, so backing out of the
       // cropper leaves the existing cover exactly as it was.
       final cropped = action == _CoverAction.recrop
-          ? await picker.crop(existing!)
+          ? await picker.crop(existing!, l10n: l10n)
           : await picker.pickAndCrop(
+              l10n: l10n,
               source: action == _CoverAction.camera
                   ? CoverSource.camera
                   : CoverSource.gallery,
@@ -384,9 +387,9 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
       AppToast.show(
         context,
         switch (action) {
-          _CoverAction.camera => "Couldn't open the camera",
-          _CoverAction.gallery => "Couldn't open your pictures",
-          _ => "Couldn't open the cropper",
+          _CoverAction.camera => l10n.toastCouldNotOpenCamera,
+          _CoverAction.gallery => l10n.toastCouldNotOpenPictures,
+          _ => l10n.toastCouldNotOpenCropper,
         },
         success: false,
       );
@@ -407,15 +410,13 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
     if (isbn == null || !Isbn.isValid(isbn)) return;
     if (!mounted) return;
 
+    final l10n = context.l10n;
     final share = await showConfirmDialog(
       context,
-      title: 'Share this book?',
-      message: 'No lookup service knows ${Isbn.display(isbn)}. Sending the '
-          'title, author and edition details you just entered would let the '
-          'next person scanning this book find it. Your own notes, purchase '
-          'details and shelves are never sent.',
-      confirmLabel: 'Share it',
-      cancelLabel: 'Keep it to myself',
+      title: l10n.shareTitle,
+      message: l10n.shareMessage(Isbn.display(isbn)),
+      confirmLabel: l10n.shareConfirm,
+      cancelLabel: l10n.shareCancel,
       destructive: false,
     );
     if (!share || !mounted) return;
@@ -437,8 +438,8 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
       AppToast.show(
         context,
         e.failure == MetadataFailure.network
-            ? "Couldn't reach the book database — your book is saved anyway"
-            : e.message ?? "The book database wouldn't accept it",
+            ? l10n.shareOffline
+            : e.message ?? l10n.shareRejected,
         success: false,
       );
     }
@@ -480,10 +481,10 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
           children: [
             ModalTopBar(
               title: _isEditing
-                  ? 'Edit book'
+                  ? context.l10n.editBookTitle
                   : addingEdition
-                      ? 'Add edition'
-                      : 'Add book',
+                      ? context.l10n.addEditionTitle
+                      : context.l10n.addBookTitle,
               onCancel: () => context.pop(),
               onSave: _save,
               saveEnabled: !_saving,
@@ -495,38 +496,38 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
               busy: _pickingCover,
               onPickCover: _pickCover,
             ),
-            const SectionLabel('The book'),
+            SectionLabel(context.l10n.sectionTheBook),
             PaperCard(
               children: [
                 EditableFieldRow(
-                  label: 'Title',
+                  label: context.l10n.fieldTitle,
                   controller: _controller('title', _draft.title),
-                  hint: 'Required',
+                  hint: context.l10n.hintRequired,
                   textCapitalization: TextCapitalization.words,
                 ),
                 EditableFieldRow(
-                  label: 'Author',
+                  label: context.l10n.fieldAuthor,
                   controller: _controller('author', _draft.authorLine),
-                  hint: 'Separate several with a comma',
+                  hint: context.l10n.hintAuthors,
                   textCapitalization: TextCapitalization.words,
                 ),
                 EditableFieldRow(
-                  label: 'Original title',
+                  label: context.l10n.fieldOriginalTitle,
                   controller:
                       _controller('originalTitle', _draft.originalTitle),
                 ),
                 EditableFieldRow(
-                  label: 'Genre',
+                  label: context.l10n.fieldGenre,
                   controller: _controller('genre', _draft.genreLine),
-                  hint: 'Fiction, History…',
+                  hint: context.l10n.hintGenres,
                   textCapitalization: TextCapitalization.words,
                 ),
                 EditableFieldRow(
-                  label: 'Series',
+                  label: context.l10n.fieldSeries,
                   controller: _controller('series', _draft.seriesName),
                 ),
                 EditableFieldRow(
-                  label: 'First published',
+                  label: context.l10n.fieldFirstPublished,
                   controller: _controller(
                     'firstPublished',
                     _draft.firstPublished?.toString(),
@@ -535,47 +536,47 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
                 EditableFieldRow(
-                  label: 'Description',
+                  label: context.l10n.fieldDescription,
                   controller: _controller('description', _draft.description),
                   maxLines: 5,
                   last: true,
                 ),
               ],
             ),
-            const SectionLabel('This edition', top: 24),
+            SectionLabel(context.l10n.sectionThisEdition, top: 24),
             PaperCard(
               children: [
                 EditableFieldRow(
-                  label: 'ISBN',
+                  label: context.l10n.fieldIsbn,
                   controller: _controller('isbn', _draft.isbnDisplay),
-                  hint: '978…',
+                  hint: context.l10n.hintIsbn,
                   keyboardType: TextInputType.number,
                   textCapitalization: TextCapitalization.none,
                   trailing: _ScanIsbnButton(onTap: _scanIsbn),
                 ),
                 EditableFieldRow(
-                  label: 'Language',
+                  label: context.l10n.fieldLanguage,
                   controller: _controller('language', _draft.language),
                   textCapitalization: TextCapitalization.words,
                 ),
                 EditableFieldRow(
-                  label: 'Publisher',
+                  label: context.l10n.fieldPublisher,
                   controller: _controller('publisher', _draft.publisher),
                   textCapitalization: TextCapitalization.words,
                 ),
                 EditableFieldRow(
-                  label: 'Edition',
+                  label: context.l10n.fieldEdition,
                   controller: _controller('editionName', _draft.editionName),
                   textCapitalization: TextCapitalization.words,
                 ),
                 EditableFieldRow(
-                  label: 'Format',
+                  label: context.l10n.fieldFormat,
                   controller: _controller('format', _draft.format),
-                  hint: 'Paperback, Hardcover…',
+                  hint: context.l10n.hintFormats,
                   textCapitalization: TextCapitalization.words,
                 ),
                 EditableFieldRow(
-                  label: 'Published',
+                  label: context.l10n.fieldPublished,
                   controller: _controller(
                     'published',
                     _draft.publicationDate ??
@@ -583,19 +584,19 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
                   ),
                 ),
                 EditableFieldRow(
-                  label: 'Pages',
+                  label: context.l10n.fieldPages,
                   controller:
                       _controller('pages', _draft.pageCount?.toString()),
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
                 EditableFieldRow(
-                  label: 'Country',
+                  label: context.l10n.fieldCountry,
                   controller: _controller('country', _draft.country),
                   textCapitalization: TextCapitalization.words,
                 ),
                 EditableFieldRow(
-                  label: 'Translator',
+                  label: context.l10n.fieldTranslator,
                   controller: _controller('translator', _draft.translator),
                   textCapitalization: TextCapitalization.words,
                   last: true,
@@ -604,19 +605,21 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
             ),
             const SizedBox(height: 10),
             SecondaryButton(
-              label: _lookingUp ? 'Looking up…' : 'Fill in from ISBN',
+              label: _lookingUp
+                  ? context.l10n.addLookingUp
+                  : context.l10n.addFillFromIsbn,
               height: 44,
               fontSize: 13.5,
               fontWeight: 600,
               onPressed: _lookingUp ? null : _lookupIsbn,
             ),
             if (!_isEditing) ...[
-              const SectionLabel('Status', top: 24),
+              SectionLabel(context.l10n.sectionStatus, top: 24),
               ChipWrap(
                 children: [
                   for (final ownership in Ownership.values)
                     AppChip(
-                      label: ownership.label,
+                      label: ownership.display(context.l10n),
                       selected: _draft.ownership == ownership,
                       onTap: () =>
                           setState(() => _draft.ownership = ownership),
@@ -628,7 +631,7 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
                 children: [
                   for (final status in ReadingStatus.values)
                     AppChip(
-                      label: status.label,
+                      label: status.display(context.l10n),
                       selected: _draft.readingStatus == status,
                       onTap: () =>
                           setState(() => _draft.readingStatus = status),
@@ -639,10 +642,10 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
             const SizedBox(height: 26),
             PrimaryButton(
               label: _isEditing
-                  ? 'Save changes'
+                  ? context.l10n.addSaveChanges
                   : _draft.ownership == Ownership.wishlist
-                      ? 'Add to wishlist'
-                      : 'Add to library',
+                      ? context.l10n.addToWishlist
+                      : context.l10n.scanAddToLibrary,
               busy: _saving,
               onPressed: _save,
             ),
@@ -662,7 +665,7 @@ class _ScanIsbnButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
         button: true,
-        label: 'Scan the ISBN',
+        label: context.l10n.scanIsbnSemantic,
         child: GestureDetector(
           onTap: onTap,
           behavior: HitTestBehavior.opaque,
@@ -739,21 +742,21 @@ class _CoverRow extends StatelessWidget {
                         spineWidth: 5,
                       )
                     : draft.title.trim().isEmpty
-                        ? const CustomPaint(
-                            painter: DashedBorderPainter(
+                        ? CustomPaint(
+                            painter: const DashedBorderPainter(
                               radius: AppRadius.cover,
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                AppIcon(
+                                const AppIcon(
                                   AppIcons.image,
                                   size: 18,
                                   color: AppColors.faint,
                                 ),
-                                SizedBox(height: 5),
+                                const SizedBox(height: 5),
                                 Text(
-                                  'Cover',
+                                  context.l10n.coverSheetTitle,
                                   style: TextStyle(
                                     fontSize: 9.5,
                                     color: AppColors.faint,
@@ -780,9 +783,7 @@ class _CoverRow extends StatelessWidget {
         Expanded(
           child: isEditing
               ? Text(
-                  'Tap the cover to photograph this edition. Changes here apply '
-                  'to the book and the edition shown on its details screen; '
-                  'purchase details live on the copy.',
+                  context.l10n.addEditHint,
                   style: AppText.sans(
                     size: 12.5,
                     height: 1.5,
@@ -792,10 +793,7 @@ class _CoverRow extends StatelessWidget {
               : Text.rich(
                   TextSpan(
                     children: [
-                      const TextSpan(
-                        text: 'Tap the cover to photograph the book. Scanning '
-                            'fills every field below automatically. ',
-                      ),
+                      TextSpan(text: '${context.l10n.addScanHint} '),
                       WidgetSpan(
                         alignment: PlaceholderAlignment.middle,
                         child: GestureDetector(
@@ -804,7 +802,7 @@ class _CoverRow extends StatelessWidget {
                             context.push(Routes.scanner);
                           },
                           child: Text(
-                            'Scan instead →',
+                            context.l10n.addScanInstead,
                             style: AppText.sans(
                               size: 12.5,
                               weight: 600,

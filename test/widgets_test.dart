@@ -1,14 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:my_library/l10n/app_localizations.dart';
 import 'package:my_library/core/widgets/book_cover.dart';
 import 'package:my_library/core/widgets/layout.dart';
 import 'package:my_library/core/widgets/pills.dart';
 import 'package:my_library/domain/models/enums.dart';
 
 void main() {
+  late AppL10n l10n;
+
+  setUpAll(() async {
+    l10n = await AppL10n.delegate.load(const Locale('en'));
+  });
+
   Future<void> pumpIn(WidgetTester tester, Widget child) => tester.pumpWidget(
-        MaterialApp(home: Scaffold(body: Center(child: child))),
+        MaterialApp(
+          localizationsDelegates: AppL10n.localizationsDelegates,
+          supportedLocales: AppL10n.supportedLocales,
+          home: Scaffold(body: Center(child: child)),
+        ),
       );
 
   group('ProgressTrack', () {
@@ -49,8 +60,8 @@ void main() {
           width: 300,
           child: Wrap(
             children: [
-              AppPill.status(ReadingStatus.read),
-              AppPill.status(ReadingStatus.unread),
+              AppPill.status(ReadingStatus.read, l10n: l10n),
+              AppPill.status(ReadingStatus.unread, l10n: l10n),
             ],
           ),
         ),

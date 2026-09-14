@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/l10n_extensions.dart';
 import '../../../core/providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/tokens.dart';
@@ -54,8 +55,8 @@ class BookDetailsScreen extends ConsumerWidget {
         ),
         error: (error, _) => SafeArea(
           child: ErrorStateView(
-            title: "This book couldn't be opened",
-            message: 'Something went wrong reading it from your library.',
+            title: context.l10n.detailsErrorTitle,
+            message: context.l10n.detailsErrorMessage,
             onRetry: () => ref.invalidate(bookDetailsProvider(workId)),
           ),
         ),
@@ -64,10 +65,10 @@ class BookDetailsScreen extends ConsumerWidget {
             // The book was removed while this screen was open.
             return SafeArea(
               child: MessageState(
-                title: 'No longer in your library',
-                message: 'This book has been removed.',
+                title: context.l10n.detailsRemovedTitle,
+                message: context.l10n.detailsRemovedMessage,
                 titleSize: 22,
-                primaryLabel: 'Back to library',
+                primaryLabel: context.l10n.actionBackToLibrary,
                 onPrimary: () => context.go(Routes.library),
               ),
             );
@@ -109,30 +110,33 @@ class _DetailsBody extends ConsumerWidget {
               ],
               const SizedBox(height: 20),
               _EditionsRow(details: details),
-              const SectionLabel('The edition you own'),
+              SectionLabel(context.l10n.sectionEditionYouOwn),
               if (edition == null)
                 PaperCard(
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(14),
                       child: Text(
-                        'No edition recorded yet.',
+                        context.l10n.detailsNoEdition,
                         style: AppText.sans(size: 13, color: AppColors.faint),
                       ),
                     ),
                   ],
                 )
               else
-                PaperCard(children: _editionRows(work, edition)),
+                PaperCard(children: _editionRows(context.l10n, work, edition)),
               if (copy != null) ...[
-                const SectionLabel('My copy'),
-                PaperCard(children: _copyRows(copy)),
+                SectionLabel(context.l10n.sectionMyCopy),
+                PaperCard(children: _copyRows(context.l10n, copy)),
                 _TagsRow(details: details, copy: copy),
                 if ((copy.notes ?? '').trim().isNotEmpty) ...[
                   const SizedBox(height: 22),
-                  NoteBlock(label: 'Personal note', text: copy.notes!),
+                  NoteBlock(
+                    label: context.l10n.sectionPersonalNote,
+                    text: copy.notes!,
+                  ),
                 ],
-                const SectionLabel('Photos of my copy'),
+                SectionLabel(context.l10n.sectionPhotosOfMyCopy),
                 _PhotoStrip(details: details, copy: copy),
               ],
               const SizedBox(height: 26),
@@ -144,42 +148,51 @@ class _DetailsBody extends ConsumerWidget {
     );
   }
 
-  List<Widget> _editionRows(Work work, Edition edition) {
+  List<Widget> _editionRows(AppL10n l10n, Work work, Edition edition) {
     final rows = <(String, String)>[
-      ('Language', edition.language ?? ''),
-      ('Publisher', edition.publisher ?? ''),
+      (l10n.fieldLanguage, edition.language ?? ''),
+      (l10n.fieldPublisher, edition.publisher ?? ''),
       if ((edition.editionName ?? '').isNotEmpty)
-        ('Edition', edition.editionName!),
-      ('Format', edition.format ?? ''),
-      ('Published', edition.publicationDate ?? '${edition.publishedYear ?? ''}'),
-      ('Pages', edition.pageCount?.toString() ?? ''),
-      ('Genre', work.genres.join(', ')),
+        (l10n.fieldEdition, edition.editionName!),
+      (l10n.fieldFormat, edition.format ?? ''),
+      (
+        l10n.fieldPublished,
+        edition.publicationDate ?? '${edition.publishedYear ?? ''}'
+      ),
+      (l10n.fieldPages, edition.pageCount?.toString() ?? ''),
+      (l10n.fieldGenre, work.genres.join(', ')),
       if ((work.seriesName ?? '').isNotEmpty)
         (
-          'Series',
+          l10n.detailsSeriesLabel,
           Fmt.dotted([
             work.seriesName,
-            work.seriesIndex == null ? null : 'Book ${work.seriesIndex}',
+            work.seriesIndex == null
+                ? null
+                : l10n.detailsBookNumber(work.seriesIndex!),
           ])
         ),
       if ((edition.translator ?? '').isNotEmpty)
-        ('Translator', edition.translator!),
+        (l10n.fieldTranslator, edition.translator!),
       if (edition.illustrators.isNotEmpty)
-        ('Illustrators', edition.illustrators.join(', ')),
+        (l10n.fieldIllustrators, edition.illustrators.join(', ')),
       if ((work.originalTitle ?? '').isNotEmpty)
-        ('Original title', work.originalTitle!),
+        (l10n.fieldOriginalTitle, work.originalTitle!),
       if ((work.originalLanguage ?? '').isNotEmpty)
-        ('Original language', work.originalLanguage!),
+        (l10n.fieldOriginalLanguage, work.originalLanguage!),
       if (work.firstPublished != null)
-        ('First published', '${work.firstPublished}'),
-      if ((edition.country ?? '').isNotEmpty) ('Country', edition.country!),
+        (l10n.fieldFirstPublished, '${work.firstPublished}'),
+      if ((edition.country ?? '').isNotEmpty)
+        (l10n.fieldCountry, edition.country!),
       if ((edition.dimensions ?? '').isNotEmpty)
-        ('Dimensions', edition.dimensions!),
+        (l10n.fieldDimensions, edition.dimensions!),
       if (edition.weightGrams != null)
-        ('Weight', '${edition.weightGrams!.round()} g'),
-      ('ISBN', edition.isbn13 == null ? '' : Isbn.display(edition.isbn13!)),
+        (l10n.fieldWeight, l10n.weightGrams(edition.weightGrams!.round())),
+      (
+        l10n.fieldIsbn,
+        edition.isbn13 == null ? '' : Isbn.display(edition.isbn13!)
+      ),
       if ((edition.isbn10 ?? '').isNotEmpty)
-        ('ISBN-10', Isbn.display(edition.isbn10!)),
+        (l10n.fieldIsbn10, Isbn.display(edition.isbn10!)),
     ];
 
     return [
@@ -192,21 +205,26 @@ class _DetailsBody extends ConsumerWidget {
     ];
   }
 
-  List<Widget> _copyRows(Copy copy) {
+  List<Widget> _copyRows(AppL10n l10n, Copy copy) {
     final rows = <(String, String)>[
-      ('Purchased', Fmt.date(copy.purchaseDate)),
-      ('Price', Fmt.money(copy.purchasePrice, copy.currency)),
-      ('Where', copy.store ?? ''),
-      ('Gift', copy.isGift ? 'From ${copy.giftFrom ?? 'a friend'}' : 'Purchased'),
+      (l10n.fieldPurchased, Fmt.date(copy.purchaseDate)),
+      (l10n.fieldPrice, Fmt.money(copy.purchasePrice, copy.currency)),
+      (l10n.fieldWhere, copy.store ?? ''),
       (
-        'Condition',
+        l10n.fieldGift,
+        copy.isGift
+            ? l10n.detailsGiftFrom(copy.giftFrom ?? l10n.detailsGiftAFriend)
+            : l10n.detailsGiftPurchased
+      ),
+      (
+        l10n.sectionCondition,
         copy.condition == null
             ? ''
-            : Condition.fromName(copy.condition).label
+            : Condition.fromName(copy.condition).display(l10n)
       ),
-      ('Location', copy.location ?? ''),
-      ('Ownership', Ownership.fromName(copy.ownership).label),
-      ('Added', Fmt.date(copy.addedDate)),
+      (l10n.sectionLocation, copy.location ?? ''),
+      (l10n.sectionOwnership, Ownership.fromName(copy.ownership).display(l10n)),
+      (l10n.fieldAdded, Fmt.date(copy.addedDate)),
     ];
 
     return [
@@ -297,7 +315,7 @@ class _Hero extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        Fmt.authors(work.authors),
+                        context.l10n.authorsOf(work.authors),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppText.sans(
@@ -310,9 +328,15 @@ class _Hero extends ConsumerWidget {
                         spacing: 6,
                         runSpacing: 6,
                         children: [
-                          _GlassPill(label: details.ownership.label),
-                          _GlassPill(label: details.status.label),
-                          _GlassPill(label: Fmt.rating(work.rating)),
+                          _GlassPill(
+                            label: details.ownership.display(context.l10n),
+                          ),
+                          _GlassPill(
+                            label: details.status.display(context.l10n),
+                          ),
+                          _GlassPill(
+                            label: context.l10n.ratingOf(work.rating),
+                          ),
                         ],
                       ),
                     ],
@@ -341,7 +365,7 @@ class _Hero extends ConsumerWidget {
               Row(
                 children: [
                   _GlassButton(
-                    label: 'Edit',
+                    label: context.l10n.actionEdit,
                     onTap: () => context.push(
                       details.primaryCopy == null
                           ? Routes.editBook(details.work.id)
@@ -387,19 +411,19 @@ Future<void> _openMenu(
           Text(details.work.title, style: AppText.sheetTitle),
           const SizedBox(height: 4),
           Text(
-            Fmt.authors(details.work.authors),
+            context.l10n.authorsOf(details.work.authors),
             style: AppText.sans(size: 12.5, color: AppColors.muted2),
           ),
           const SizedBox(height: 18),
           _MenuRow(
-            label: 'Edit book details',
+            label: context.l10n.detailsMenuEditBook,
             onTap: () {
               Navigator.of(sheetContext).pop();
               context.push(Routes.editBook(details.work.id));
             },
           ),
           _MenuRow(
-            label: 'All editions of this work',
+            label: context.l10n.detailsMenuAllEditions,
             onTap: () {
               Navigator.of(sheetContext).pop();
               context.push(Routes.bookEditions(details.work.id));
@@ -407,7 +431,7 @@ Future<void> _openMenu(
           ),
           if (details.primaryCopy != null)
             _MenuRow(
-              label: 'Edit this copy',
+              label: context.l10n.detailsMenuEditCopy,
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 context.push(
@@ -418,7 +442,7 @@ Future<void> _openMenu(
           const SizedBox(height: 18),
           if (details.primaryCopy != null)
             DestructiveButton(
-              label: 'Remove this copy',
+              label: context.l10n.detailsRemoveCopy,
               onPressed: () async {
                 Navigator.of(sheetContext).pop();
                 await confirmRemoveCopy(context, ref, details);
@@ -459,19 +483,18 @@ Future<void> confirmRemoveCopy(
           .length -
       1;
 
+  final l10n = context.l10n;
   final survives = switch ((siblingCopies, otherEditions)) {
-    (> 0, _) => 'Your other copy of this edition stays.',
-    (_, > 1) => 'Your other $otherEditions editions stay.',
-    (_, 1) => 'Your other edition stays.',
-    _ => 'The book will be removed from your library entirely.',
+    (> 0, _) => l10n.survivesOtherCopy,
+    (_, > 0) => l10n.survivesOtherEditions(otherEditions),
+    _ => l10n.survivesNothing,
   };
 
   final confirmed = await showConfirmDialog(
     context,
-    title: 'Remove this copy?',
-    message: 'Your $descriptor copy of ${details.work.title} will be deleted, '
-        'along with its purchase details and photos. $survives',
-    confirmLabel: 'Remove copy',
+    title: l10n.removeCopyTitle,
+    message: l10n.removeCopyMessage(descriptor, details.work.title, survives),
+    confirmLabel: l10n.removeCopyConfirm,
   );
   if (!confirmed || !context.mounted) return;
 
@@ -484,10 +507,18 @@ Future<void> confirmRemoveCopy(
   }
   if (!context.mounted) return;
 
-  AppToast.show(context, result.toastMessage);
+  AppToast.show(context, _removeToast(l10n, result));
   if (result.removedWork) {
     context.go(Routes.library);
   }
+}
+
+/// What the toast says after a copy is removed: whether the edition, or the
+/// whole book, went with it.
+String _removeToast(AppL10n l10n, RemoveCopyResult result) {
+  if (result.removedWork) return l10n.toastRemovedFromLibrary;
+  if (!result.removedEdition) return l10n.toastCopyRemoved;
+  return l10n.toastCopyRemovedEditionsLeft(result.remainingEditions);
 }
 
 class _MenuRow extends StatelessWidget {
@@ -628,7 +659,9 @@ class _ProgressCard extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              total > 0 ? '$current of $total pages' : 'Page $current',
+              total > 0
+                  ? context.l10n.detailsPagesOf(current, total)
+                  : context.l10n.detailsPageOnly(current),
               style: AppText.sans(size: 12.5, color: AppColors.muted),
             ),
             if (total > 0)
@@ -644,7 +677,7 @@ class _ProgressCard extends ConsumerWidget {
         SizedBox(
           width: double.infinity,
           child: SecondaryButton(
-            label: 'Update progress',
+            label: context.l10n.detailsUpdateProgress,
             height: 42,
             fontSize: 13.5,
             fontWeight: 600,
@@ -719,15 +752,13 @@ class _EditionsRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    count == 1
-                        ? '1 edition of this work'
-                        : '$count editions of this work',
+                    context.l10n.detailsEditionsOfWork(count),
                     style: AppText.sans(size: 13.5, weight: 600),
                   ),
                   const SizedBox(height: 1),
                   Text(
                     summary.isEmpty
-                        ? 'Add another copy or translation'
+                        ? context.l10n.detailsAddAnotherCopyOrTranslation
                         : summary,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -782,10 +813,10 @@ class _PhotoStrip extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Add a photo', style: AppText.sheetTitle),
+            Text(context.l10n.photoSheetTitle, style: AppText.sheetTitle),
             const SizedBox(height: 4),
             Text(
-              'Photos of your copy are kept separate from the official cover.',
+              context.l10n.photoSheetSubtitle,
               style: AppText.sans(
                 size: 12.5,
                 height: 1.5,
@@ -795,7 +826,7 @@ class _PhotoStrip extends ConsumerWidget {
             const SizedBox(height: 14),
             for (final type in PhotoType.values)
               _MenuRow(
-                label: type.label,
+                label: type.display(context.l10n),
                 onTap: () => Navigator.of(sheetContext).pop(type),
               ),
           ],
@@ -812,10 +843,14 @@ class _PhotoStrip extends ConsumerWidget {
       );
       if (picked == null || !context.mounted) return;
       await ref.read(databaseProvider).addCopyPhoto(copy.id, picked.path, type);
-      if (context.mounted) AppToast.show(context, 'Photo added');
+      if (context.mounted) AppToast.show(context, context.l10n.toastPhotoAdded);
     } catch (_) {
       if (context.mounted) {
-        AppToast.show(context, "Couldn't open the photo library", success: false);
+        AppToast.show(
+          context,
+          context.l10n.toastCouldNotOpenPhotos,
+          success: false,
+        );
       }
     }
   }
@@ -833,18 +868,22 @@ class _PhotoStrip extends ConsumerWidget {
             _PhotoTile(
               photo: photo,
               onRemove: () async {
+                final l10n = context.l10n;
                 final confirmed = await showConfirmDialog(
                   context,
-                  title: 'Delete this photo?',
-                  message:
-                      'The ${PhotoType.fromName(photo.type).label.toLowerCase()} '
-                      'photo of your copy will be removed. The book and its '
-                      'details stay.',
-                  confirmLabel: 'Delete photo',
+                  title: l10n.photoDeleteTitle,
+                  message: l10n.photoDeleteMessage(
+                    PhotoType.fromName(photo.type)
+                        .display(l10n)
+                        .toLowerCase(),
+                  ),
+                  confirmLabel: l10n.photoDeleteConfirm,
                 );
                 if (!confirmed) return;
                 await ref.read(databaseProvider).removeCopyPhoto(photo.id);
-                if (context.mounted) AppToast.show(context, 'Photo removed');
+                if (context.mounted) {
+                  AppToast.show(context, l10n.toastPhotoRemoved);
+                }
               },
             ),
             const SizedBox(width: 9),
@@ -898,7 +937,7 @@ class _PhotoTile extends StatelessWidget {
               // labelled tile rather than a crash.
               errorBuilder: (context, _, _) => Center(
                 child: Text(
-                  PhotoType.fromName(photo.type).label,
+                  PhotoType.fromName(photo.type).display(context.l10n),
                   textAlign: TextAlign.center,
                   style: AppText.sans(size: 11, color: AppColors.muted2),
                 ),
@@ -912,7 +951,7 @@ class _PhotoTile extends StatelessWidget {
                 color: const Color(0x8C1A1714),
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Text(
-                  PhotoType.fromName(photo.type).label,
+                  PhotoType.fromName(photo.type).display(context.l10n),
                   textAlign: TextAlign.center,
                   style: AppText.sans(
                     size: 9,
@@ -943,12 +982,12 @@ class _StatusActions extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionLabel('Reading status', top: 0),
+        SectionLabel(context.l10n.sectionStatus, top: 0),
         ChipWrap(
           children: [
             for (final status in ReadingStatus.values)
               AppChip(
-                label: status.label,
+                label: status.display(context.l10n),
                 selected: status == current,
                 onTap: () async {
                   if (status == current) return;
@@ -956,13 +995,18 @@ class _StatusActions extends ConsumerWidget {
                       .read(readingRepositoryProvider)
                       .setStatus(details.work.id, status);
                   if (context.mounted) {
-                    AppToast.show(context, 'Marked as ${status.label.toLowerCase()}');
+                    AppToast.show(
+                      context,
+                      context.l10n.toastMarkedAs(
+                        status.display(context.l10n).toLowerCase(),
+                      ),
+                    );
                   }
                 },
               ),
           ],
         ),
-        const SectionLabel('Rating', top: 24),
+        SectionLabel(context.l10n.sectionRating, top: 24),
         Align(
           alignment: Alignment.centerLeft,
           child: Row(
@@ -976,7 +1020,7 @@ class _StatusActions extends ConsumerWidget {
               const SizedBox(width: 15),
               Text(
                 details.work.rating == null || details.work.rating == 0
-                    ? 'Not rated'
+                    ? context.l10n.detailsNotRated
                     : details.work.rating!.toStringAsFixed(1),
                 style: AppText.sans(size: 13, color: AppColors.muted2),
               ),

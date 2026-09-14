@@ -91,7 +91,7 @@ class WishlistRepository {
           WishlistFilter(
             kind: WishlistFilterKind.priority,
             value: priority.name,
-            label: '${priority.label} $count',
+            count: count,
           ),
         );
       }
@@ -108,7 +108,7 @@ class WishlistRepository {
         WishlistFilter(
           kind: WishlistFilterKind.language,
           value: language,
-          label: language,
+          count: items.where((i) => i.desiredLanguage == language).length,
         ),
       );
     }
@@ -124,7 +124,7 @@ class WishlistRepository {
         WishlistFilter(
           kind: WishlistFilterKind.format,
           value: format,
-          label: format,
+          count: items.where((i) => i.desiredFormat == format).length,
         ),
       );
     }
@@ -320,15 +320,21 @@ enum WishlistFilterKind { all, priority, language, format }
 class WishlistFilter {
   const WishlistFilter({
     required this.kind,
-    required this.label,
+    required this.count,
     this.value,
   });
 
   factory WishlistFilter.all(int count) =>
-      WishlistFilter(kind: WishlistFilterKind.all, label: 'All $count');
+      WishlistFilter(kind: WishlistFilterKind.all, count: count);
 
   final WishlistFilterKind kind;
-  final String label;
+
+  /// How many wishlist entries this filter matches. The chip's wording is
+  /// built in the UI, where the interface language is known.
+  final int count;
+
+  /// The stored value this filter matches on: a [Priority] name, a language
+  /// or a format. Null for [WishlistFilterKind.all].
   final String? value;
 
   @override

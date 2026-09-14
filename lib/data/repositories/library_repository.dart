@@ -124,7 +124,10 @@ class LibraryRepository {
         .get();
 
     return {
-      FilterGroup.status: ReadingStatus.values.map((e) => e.label).toList(),
+      // Stable enum names, not words: a filter picked in English must still
+      // match after the interface is switched to Uzbek. The sheet translates
+      // them for display.
+      FilterGroup.status: ReadingStatus.values.map((e) => e.name).toList(),
       FilterGroup.language: results[2],
       FilterGroup.genre: results[0],
       FilterGroup.format: results[3],
@@ -467,8 +470,7 @@ class LibraryRepository {
   Expression<bool> _filterPredicate(FilterGroup group, String value) {
     switch (group) {
       case FilterGroup.status:
-        return _db.works.readingStatus
-            .equals(ReadingStatus.fromLabel(value).name);
+        return _db.works.readingStatus.equals(ReadingStatus.fromName(value).name);
       case FilterGroup.series:
         return _db.works.seriesName.equals(value);
       case FilterGroup.genre:

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/l10n_extensions.dart';
 import '../theme/tokens.dart';
 import '../widgets/app_icons.dart';
 import '../widgets/bottom_nav.dart';
@@ -14,13 +15,17 @@ class AppShell extends StatelessWidget {
 
   final StatefulNavigationShell navigationShell;
 
-  static const _destinations = [
-    NavDestination(label: 'Library', icon: AppIcons.navLibrary),
-    NavDestination(label: 'Reading', icon: AppIcons.navReading),
-    NavDestination(label: 'Scan', icon: AppIcons.barcode, promoted: true),
-    NavDestination(label: 'Wishlist', icon: AppIcons.navWishlist),
-    NavDestination(label: 'Profile', icon: AppIcons.navProfile),
-  ];
+  static List<NavDestination> _destinations(BuildContext context) => [
+        NavDestination(label: context.l10n.navLibrary, icon: AppIcons.navLibrary),
+        NavDestination(label: context.l10n.navReading, icon: AppIcons.navReading),
+        NavDestination(
+          label: context.l10n.navScan,
+          icon: AppIcons.barcode,
+          promoted: true,
+        ),
+        NavDestination(label: context.l10n.navWishlist, icon: AppIcons.navWishlist),
+        NavDestination(label: context.l10n.navProfile, icon: AppIcons.navProfile),
+      ];
 
   /// Nav index 2 is Scan; branch indexes skip it.
   static int _branchToNav(int branch) => branch >= 2 ? branch + 1 : branch;
@@ -37,7 +42,7 @@ class AppShell extends StatelessWidget {
       extendBody: true,
       body: navigationShell,
       bottomNavigationBar: AppBottomNav(
-        destinations: _destinations,
+        destinations: _destinations(context),
         currentIndex: _branchToNav(navigationShell.currentIndex),
         onSelected: (index) {
           final branch = _navToBranch(index);

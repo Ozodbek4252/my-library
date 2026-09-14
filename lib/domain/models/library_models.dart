@@ -1,5 +1,6 @@
 import '../../core/utils/formatting.dart';
 import '../../data/local/database.dart';
+import '../../core/l10n_extensions.dart';
 import 'enums.dart';
 
 /// An edition together with the user's copies of it.
@@ -47,7 +48,6 @@ class LibraryEntry {
   final DateTime addedDate;
 
   String get title => work.title;
-  String get authorLine => Fmt.authors(work.authors);
   ReadingStatus get status => ReadingStatus.fromName(work.readingStatus);
 
   /// "English · Penguin · Paperback · 2013"
@@ -179,12 +179,11 @@ class ReadingEntryView {
   int get pagesLeft => (totalPages - currentPage).clamp(0, totalPages);
 
   /// "Started 14 Aug · 12 days in"
-  String get sinceLine {
-    if (startedAt == null) return 'Not started yet';
+  String sinceLine(AppL10n l10n) {
+    if (startedAt == null) return l10n.readingNotStarted;
+    final started = l10n.readingStartedOn(Fmt.shortDate(startedAt));
     final days = DateTime.now().difference(startedAt!).inDays;
-    final started = 'Started ${Fmt.shortDate(startedAt)}';
-    if (days <= 0) return '$started · today';
-    return '$started · ${days == 1 ? '1 day' : '$days days'} in';
+    return '$started · ${days <= 0 ? l10n.readingToday : l10n.readingDaysIn(days)}';
   }
 }
 
@@ -201,9 +200,9 @@ class HistoryEntry {
   final Edition? edition;
 
   /// "Finished 2 Sep · 3 days"
-  String get datesLine {
-    final finished = 'Finished ${Fmt.shortDate(entry.finishDate)}';
+  String datesLine(AppL10n l10n) {
+    final finished = l10n.readingFinishedOn(Fmt.shortDate(entry.finishDate));
     if (entry.startDate == null) return finished;
-    return '$finished · ${Fmt.durationDays(entry.startDate!, entry.finishDate)}';
+    return '$finished · ${l10n.daysBetween(entry.startDate!, entry.finishDate)}';
   }
 }

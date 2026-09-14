@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/l10n_extensions.dart';
 import '../../../../core/providers.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/theme/typography.dart';
@@ -69,7 +70,7 @@ class _ProgressSheetState extends ConsumerState<_ProgressSheet> {
         .read(readingRepositoryProvider)
         .updateProgress(widget.workId, _page ?? 0);
     if (!mounted) return;
-    AppToast.show(context, 'Progress saved');
+    AppToast.show(context, context.l10n.toastProgressSaved);
     Navigator.of(context).pop();
   }
 
@@ -79,7 +80,7 @@ class _ProgressSheetState extends ConsumerState<_ProgressSheet> {
     if (!mounted) return;
     AppToast.show(
       context,
-      'Finished · added to ${DateTime.now().year} history',
+      context.l10n.toastFinished('${DateTime.now().year}'),
     );
     Navigator.of(context).pop();
   }
@@ -110,7 +111,7 @@ class _ProgressSheetState extends ConsumerState<_ProgressSheet> {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 30),
           child: Text(
-            'This book is no longer in your library.',
+            context.l10n.progressGone,
             style: AppText.sans(size: 14, color: AppColors.muted),
           ),
         ),
@@ -136,9 +137,9 @@ class _ProgressSheetState extends ConsumerState<_ProgressSheet> {
           Text(
             Fmt.dotted([
               work.startDate == null
-                  ? 'Not started yet'
-                  : 'Started ${Fmt.date(work.startDate)}',
-              _total > 0 ? '$_total pages' : null,
+                  ? context.l10n.readingNotStarted
+                  : context.l10n.progressStarted(Fmt.date(work.startDate)),
+              _total > 0 ? context.l10n.progressPagesTotal(_total) : null,
             ]),
             style: AppText.sans(size: 12.5, color: AppColors.muted2),
           ),
@@ -161,8 +162,8 @@ class _ProgressSheetState extends ConsumerState<_ProgressSheet> {
           const SizedBox(height: 4),
           Text(
             _total > 0
-                ? '$percent% · $left pages to go'
-                : 'Add a page count to this edition to track a percentage',
+                ? context.l10n.progressPercentToGo(percent, left)
+                : context.l10n.progressNoPageCount,
             textAlign: TextAlign.center,
             style: AppText.sans(size: 13, color: AppColors.muted2),
           ),
@@ -174,7 +175,10 @@ class _ProgressSheetState extends ConsumerState<_ProgressSheet> {
               _StepButton(label: '−', onTap: () => _step(-10), width: 56),
               const SizedBox(width: 9),
               Expanded(
-                child: _StepButton(label: '+10 pages', onTap: () => _step(10)),
+                child: _StepButton(
+                  label: context.l10n.progressPlusTen,
+                  onTap: () => _step(10),
+                ),
               ),
               const SizedBox(width: 9),
               _StepButton(label: '+', onTap: () => _step(25), width: 56),
@@ -185,7 +189,7 @@ class _ProgressSheetState extends ConsumerState<_ProgressSheet> {
             children: [
               Expanded(
                 child: PrimaryButton(
-                  label: 'Save progress',
+                  label: context.l10n.progressSave,
                   busy: _saving,
                   onPressed: _save,
                 ),
@@ -193,7 +197,7 @@ class _ProgressSheetState extends ConsumerState<_ProgressSheet> {
               const SizedBox(width: 9),
               Expanded(
                 child: SecondaryButton(
-                  label: 'Finished it',
+                  label: context.l10n.progressFinished,
                   height: 52,
                   fontSize: 14.5,
                   onPressed: _saving ? null : _finish,

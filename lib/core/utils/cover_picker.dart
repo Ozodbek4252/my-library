@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../l10n_extensions.dart';
 import '../theme/tokens.dart';
 
 /// Where a cover image came from.
@@ -35,6 +36,7 @@ class CoverPicker {
   /// null if the user backed out of either step.
   Future<String?> pickAndCrop({
     required CoverSource source,
+    required AppL10n l10n,
     double devicePixelRatio = 3,
   }) async {
     final picked = await ImagePicker().pickImage(
@@ -48,11 +50,11 @@ class CoverPicker {
     );
     if (picked == null) return null;
 
-    return crop(picked.path);
+    return crop(picked.path, l10n: l10n);
   }
 
   /// Re-frames an image already on file.
-  Future<String?> crop(String sourcePath) async {
+  Future<String?> crop(String sourcePath, {required AppL10n l10n}) async {
     final cropped = await ImageCropper().cropImage(
       sourcePath: sourcePath,
       // No aspectRatio here: passing one pins the crop box and takes the
@@ -66,7 +68,7 @@ class CoverPicker {
       maxHeight: 1800,
       uiSettings: [
         AndroidUiSettings(
-          toolbarTitle: 'Frame the cover',
+          toolbarTitle: l10n.coverCropTitle,
           toolbarColor: AppColors.ink,
           toolbarWidgetColor: AppColors.paper,
           backgroundColor: AppColors.darkScene,
@@ -89,13 +91,13 @@ class CoverPicker {
           ],
         ),
         IOSUiSettings(
-          title: 'Frame the cover',
+          title: l10n.coverCropTitle,
           aspectRatioLockEnabled: false,
           aspectRatioPickerButtonHidden: false,
           resetAspectRatioEnabled: true,
           rotateClockwiseButtonHidden: false,
-          doneButtonTitle: 'Use',
-          cancelButtonTitle: 'Cancel',
+          doneButtonTitle: l10n.coverCropUse,
+          cancelButtonTitle: l10n.actionCancel,
         ),
       ],
     );

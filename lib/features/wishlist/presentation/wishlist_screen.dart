@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n_extensions.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../core/theme/typography.dart';
@@ -36,12 +37,14 @@ class WishlistScreen extends ConsumerWidget {
         AppSpacing.navClearance,
       ),
       children: [
-        Text('Wishlist', style: AppText.screenTitle),
+        Text(context.l10n.wishlistTitle, style: AppText.screenTitle),
         const SizedBox(height: 3),
         Text(
           Fmt.dotted([
-            Fmt.pluralBooks(total),
-            highPriority == 0 ? null : '$highPriority high priority',
+            context.l10n.bookCount(total),
+            highPriority == 0
+                ? null
+                : context.l10n.wishlistHighPriority(highPriority),
           ]),
           style: AppText.sans(size: 12.5, color: AppColors.muted2),
         ),
@@ -57,7 +60,7 @@ class WishlistScreen extends ConsumerWidget {
                 final filter = filters[index];
                 final isAll = filter.kind == WishlistFilterKind.all;
                 return AppChip(
-                  label: filter.label,
+                  label: _filterLabel(context, filter),
                   selected: isAll ? selected == null : selected == filter,
                   onTap: () => ref
                       .read(wishlistFilterProvider.notifier)
@@ -83,7 +86,7 @@ class WishlistScreen extends ConsumerWidget {
             ),
           ),
           error: (error, _) => ErrorStateView(
-            message: 'Your wishlist could not be loaded.',
+            message: context.l10n.wishlistErrorMessage,
             onRetry: () => ref.invalidate(wishlistProvider),
           ),
           data: (items) {
@@ -92,15 +95,16 @@ class WishlistScreen extends ConsumerWidget {
                 padding: const EdgeInsets.only(top: 50),
                 child: MessageState(
                   title: selected == null
-                      ? 'Nothing on the list yet'
-                      : 'Nothing matches that',
+                      ? context.l10n.wishlistEmptyTitle
+                      : context.l10n.wishlistNoFilterTitle,
                   message: selected == null
-                      ? 'Scan a book you want but do not own, and it lands '
-                          'here instead of on your shelves.'
-                      : 'Try another filter.',
+                      ? context.l10n.wishlistEmptyMessage
+                      : context.l10n.wishlistNoFilterMessage,
                   titleSize: 22,
                   maxMessageWidth: 260,
-                  primaryLabel: selected == null ? 'Scan a book' : 'Show all',
+                  primaryLabel: selected == null
+                      ? context.l10n.actionScanBook
+                      : context.l10n.actionShowAll,
                   onPrimary: () {
                     if (selected == null) {
                       context.push(Routes.scanner);
@@ -122,6 +126,20 @@ class WishlistScreen extends ConsumerWidget {
     );
   }
 }
+
+/// Chip wording for a filter. The repository only knows the kind, the stored
+/// value and the count — languages and formats are stored as written, so they
+/// are shown as stored.
+String _filterLabel(BuildContext context, WishlistFilter filter) =>
+    switch (filter.kind) {
+      WishlistFilterKind.all => context.l10n.wishlistAll(filter.count),
+      WishlistFilterKind.priority =>
+        '${Priority.fromName(filter.value!).display(context.l10n)} '
+            '${filter.count}',
+      WishlistFilterKind.language ||
+      WishlistFilterKind.format =>
+        filter.value ?? '',
+    };
 
 class _WishlistRow extends StatelessWidget {
   const _WishlistRow({required this.entry});
@@ -166,7 +184,7 @@ class _WishlistRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    Fmt.authors(entry.work.authors),
+                    context.l10n.authorsOf(entry.work.authors),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.listSecondary,
@@ -184,7 +202,7 @@ class _WishlistRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            AppPill.priority(entry.priority),
+            AppPill.priority(entry.priority, l10n: context.l10n),
           ],
         ),
       ),

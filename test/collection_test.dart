@@ -400,7 +400,7 @@ void main() {
 
       final entries = await library.watchLibrary(const LibraryQuery()).first;
       expect(entries.single.metaLine, isEmpty);
-      expect(entries.single.authorLine, 'Unknown author');
+      expect(entries.single.work.authors, isEmpty);
     });
 
     test('progress on a book with no page count does not divide by zero',

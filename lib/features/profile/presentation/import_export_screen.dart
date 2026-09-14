@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/l10n_extensions.dart';
 import '../../../core/providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/tokens.dart';
@@ -33,6 +34,7 @@ class _ImportExportScreenState extends ConsumerState<ImportExportScreen> {
     required String filename,
     required Future<String> Function(ExportService) build,
   }) async {
+    final l10n = context.l10n;
     setState(() => _busyFormat = format);
     try {
       final service = ExportService(ref.read(databaseProvider));
@@ -47,17 +49,17 @@ class _ImportExportScreenState extends ConsumerState<ImportExportScreen> {
         ShareParams(
           files: [XFile(file.path)],
           fileNameOverrides: [filename],
-          subject: 'My library',
+          subject: l10n.profileMyLibrary,
         ),
       );
 
       if (!mounted) return;
       if (result.status == ShareResultStatus.success) {
-        AppToast.show(context, 'Exported $filename');
+        AppToast.show(context, l10n.toastExported(filename));
       }
     } catch (e) {
       if (!mounted) return;
-      AppToast.show(context, "Export failed — couldn't write the file",
+      AppToast.show(context, l10n.toastExportFailed,
           success: false);
     } finally {
       if (mounted) setState(() => _busyFormat = null);
@@ -86,23 +88,23 @@ class _ImportExportScreenState extends ConsumerState<ImportExportScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          Text('Import & export', style: AppText.screenTitleSmall),
+          Text(context.l10n.importTitle, style: AppText.screenTitleSmall),
           const SizedBox(height: 6),
           Text(
-            'Your library is yours. Take it out at any time.',
+            context.l10n.importIntro,
             style: AppText.sans(
               size: 13,
               height: 1.55,
               color: AppColors.muted,
             ),
           ),
-          const SectionLabel('Export'),
+          SectionLabel(context.l10n.importSectionExport),
           PaperCard(
             children: [
               _ExportRowTile(
                 mark: 'CSV',
                 label: 'CSV',
-                subtitle: 'Every field, one row per copy',
+                subtitle: context.l10n.importCsvSubtitle,
                 busy: _busyFormat == 'csv',
                 onTap: () => _export(
                   format: 'csv',
@@ -113,7 +115,7 @@ class _ImportExportScreenState extends ConsumerState<ImportExportScreen> {
               _ExportRowTile(
                 mark: '{ }',
                 label: 'JSON',
-                subtitle: 'Full structure — works, editions and copies',
+                subtitle: context.l10n.importJsonSubtitle,
                 busy: _busyFormat == 'json',
                 onTap: () => _export(
                   format: 'json',
@@ -123,8 +125,8 @@ class _ImportExportScreenState extends ConsumerState<ImportExportScreen> {
               ),
               _ExportRowTile(
                 mark: '☰',
-                label: 'Printable list',
-                subtitle: 'A plain list of your shelves',
+                label: context.l10n.importPrintableLabel,
+                subtitle: context.l10n.importPrintableSubtitle,
                 busy: _busyFormat == 'txt',
                 last: true,
                 onTap: () => _export(
@@ -135,7 +137,7 @@ class _ImportExportScreenState extends ConsumerState<ImportExportScreen> {
               ),
             ],
           ),
-          const SectionLabel('Import'),
+          SectionLabel(context.l10n.importSectionImport),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -158,7 +160,7 @@ class _ImportExportScreenState extends ConsumerState<ImportExportScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Not built yet',
+                        context.l10n.importNotBuiltTitle,
                         style: AppText.sans(
                           size: 13.5,
                           weight: 600,
@@ -167,10 +169,7 @@ class _ImportExportScreenState extends ConsumerState<ImportExportScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Importing from a Goodreads, LibraryThing or CSV file '
-                        'is planned but not implemented. Until then, scanning '
-                        'is the fastest way to fill a shelf — a barcode fills '
-                        'in every field for you.',
+                        context.l10n.importNotBuiltMessage,
                         style: AppText.sans(
                           size: 12.5,
                           height: 1.5,
@@ -185,7 +184,7 @@ class _ImportExportScreenState extends ConsumerState<ImportExportScreen> {
           ),
           const SizedBox(height: 14),
           SecondaryButton(
-            label: 'Scan a book instead',
+            label: context.l10n.importScanInstead,
             height: 48,
             onPressed: () {
               context.pop();

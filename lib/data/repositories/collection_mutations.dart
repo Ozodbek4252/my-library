@@ -392,20 +392,13 @@ class RemoveCopyResult {
 class EnrichmentResult {
   const EnrichmentResult(this.filled);
 
-  /// Human-readable names of the fields that were empty and are now filled.
-  final List<String> filled;
+  /// The fields that were empty and are now filled. Named in the UI, so the
+  /// note — said out loud, because changing someone's records silently is not
+  /// on — is written in the interface language.
+  final List<EnrichedField> filled;
 
   bool get isEmpty => filled.isEmpty;
   bool get isNotEmpty => filled.isNotEmpty;
-
-  /// "Filled in the cover, pages and year" — said out loud, because changing
-  /// someone's records silently is not on.
-  String get message {
-    if (filled.isEmpty) return '';
-    if (filled.length == 1) return 'Filled in the ${filled.single}';
-    final head = filled.sublist(0, filled.length - 1).join(', ');
-    return 'Filled in the $head and ${filled.last}';
-  }
 }
 
 /// Fills the blanks on a book already in the library from a fresh lookup.
@@ -419,7 +412,7 @@ extension EnrichmentMutations on AppDatabase {
     required String editionId,
     required BookMetadata found,
   }) async {
-    final filled = <String>[];
+    final filled = <EnrichedField>[];
 
     return transaction(() async {
       final work =
@@ -431,40 +424,44 @@ extension EnrichmentMutations on AppDatabase {
       // --- the edition ---
       var editionUpdate = const EditionsCompanion();
 
-      Value<T?> keep<T extends Object>(T? current, T? incoming, String label) {
+      Value<T?> keep<T extends Object>(
+        T? current,
+        T? incoming,
+        EnrichedField field,
+      ) {
         final isEmpty = current == null || (current is String && current.isEmpty);
         if (!isEmpty || incoming == null) return const Value.absent();
         if (incoming is String && incoming.isEmpty) return const Value.absent();
-        filled.add(label);
+        filled.add(field);
         return Value(incoming);
       }
 
       editionUpdate = editionUpdate.copyWith(
-        isbn13: keep(edition.isbn13, found.isbn13, 'ISBN'),
-        isbn10: keep(edition.isbn10, found.isbn10, 'ISBN-10'),
-        publisher: keep(edition.publisher, found.publisher, 'publisher'),
+        isbn13: keep(edition.isbn13, found.isbn13, EnrichedField.isbn),
+        isbn10: keep(edition.isbn10, found.isbn10, EnrichedField.isbn10),
+        publisher: keep(edition.publisher, found.publisher, EnrichedField.publisher),
         publicationDate:
-            keep(edition.publicationDate, found.publicationDate, 'publication date'),
-        publishedYear: keep(edition.publishedYear, found.publishedYear, 'year'),
-        language: keep(edition.language, found.language, 'language'),
-        format: keep(edition.format, found.format, 'format'),
-        editionName: keep(edition.editionName, found.editionName, 'edition name'),
-        pageCount: keep(edition.pageCount, found.pageCount, 'page count'),
+            keep(edition.publicationDate, found.publicationDate, EnrichedField.publicationDate),
+        publishedYear: keep(edition.publishedYear, found.publishedYear, EnrichedField.year),
+        language: keep(edition.language, found.language, EnrichedField.language),
+        format: keep(edition.format, found.format, EnrichedField.format),
+        editionName: keep(edition.editionName, found.editionName, EnrichedField.editionName),
+        pageCount: keep(edition.pageCount, found.pageCount, EnrichedField.pageCount),
         // A cover the user photographed outranks any URL, so it is never
         // touched; the URL is only filled when there is no artwork at all.
         coverUrl: (edition.coverImagePath ?? '').isNotEmpty
             ? const Value.absent()
-            : keep(edition.coverUrl, found.coverUrl, 'cover'),
-        dimensions: keep(edition.dimensions, found.dimensions, 'dimensions'),
-        weightGrams: keep(edition.weightGrams, found.weightGrams, 'weight'),
-        translator: keep(edition.translator, found.translator, 'translator'),
-        country: keep(edition.country, found.country, 'country'),
+            : keep(edition.coverUrl, found.coverUrl, EnrichedField.cover),
+        dimensions: keep(edition.dimensions, found.dimensions, EnrichedField.dimensions),
+        weightGrams: keep(edition.weightGrams, found.weightGrams, EnrichedField.weight),
+        translator: keep(edition.translator, found.translator, EnrichedField.translator),
+        country: keep(edition.country, found.country, EnrichedField.country),
       );
 
       if (edition.illustrators.isEmpty && found.illustrators.isNotEmpty) {
         editionUpdate =
             editionUpdate.copyWith(illustrators: Value(found.illustrators));
-        filled.add('illustrators');
+        filled.add(EnrichedField.illustrators);
       }
 
       await (update(editions)..where((e) => e.id.equals(editionId)))
@@ -473,23 +470,23 @@ extension EnrichmentMutations on AppDatabase {
       // --- the work ---
       var workUpdate = const WorksCompanion();
       workUpdate = workUpdate.copyWith(
-        description: keep(work.description, found.description, 'description'),
+        description: keep(work.description, found.description, EnrichedField.description),
         originalTitle:
-            keep(work.originalTitle, found.originalTitle, 'original title'),
+            keep(work.originalTitle, found.originalTitle, EnrichedField.originalTitle),
         originalLanguage: keep(
           work.originalLanguage,
           found.originalLanguage,
-          'original language',
+          EnrichedField.originalLanguage,
         ),
-        seriesName: keep(work.seriesName, found.seriesName, 'series'),
-        seriesIndex: keep(work.seriesIndex, found.seriesIndex, 'series number'),
+        seriesName: keep(work.seriesName, found.seriesName, EnrichedField.series),
+        seriesIndex: keep(work.seriesIndex, found.seriesIndex, EnrichedField.seriesNumber),
         firstPublished:
-            keep(work.firstPublished, found.firstPublished, 'first published'),
+            keep(work.firstPublished, found.firstPublished, EnrichedField.firstPublished),
       );
 
       if (work.genres.isEmpty && found.genres.isNotEmpty) {
         workUpdate = workUpdate.copyWith(genres: Value(found.genres));
-        filled.add('genre');
+        filled.add(EnrichedField.genre);
       }
 
       if (workUpdate != const WorksCompanion()) {

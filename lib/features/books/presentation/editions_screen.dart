@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n_extensions.dart';
 import '../../../core/providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/tokens.dart';
@@ -47,17 +48,17 @@ class EditionsScreen extends ConsumerWidget {
         ),
         error: (error, _) => SafeArea(
           child: ErrorStateView(
-            message: "These editions couldn't be read from your library.",
+            message: context.l10n.editionsErrorMessage,
             onRetry: () => ref.invalidate(bookDetailsProvider(workId)),
           ),
         ),
         data: (data) => data == null
             ? SafeArea(
                 child: MessageState(
-                  title: 'No longer in your library',
-                  message: 'This book has been removed.',
+                  title: context.l10n.detailsRemovedTitle,
+                  message: context.l10n.detailsRemovedMessage,
                   titleSize: 22,
-                  primaryLabel: 'Back to library',
+                  primaryLabel: context.l10n.actionBackToLibrary,
                   onPrimary: () => context.go(Routes.library),
                 ),
               )
@@ -103,22 +104,21 @@ class _EditionsBody extends ConsumerWidget {
         const SizedBox(height: 3),
         Text(
           Fmt.dotted([
-            Fmt.authors(work.authors),
+            context.l10n.authorsOf(work.authors),
             work.firstPublished == null
                 ? null
-                : 'first published ${work.firstPublished}',
+                : context.l10n.editionsFirstPublished(work.firstPublished!),
           ]),
           style: AppText.sans(size: 13.5, color: AppColors.muted2),
         ),
         const SizedBox(height: 12),
         Text(
           details.editions.length == 1 && copies == 1
-              ? 'One work, one copy. Reading status belongs to the work; '
-                  'everything else belongs to the copy.'
-              : 'One work, ${_plural(copies, 'copy', 'copies')} across '
-                  '${_plural(details.editions.length, 'edition', 'editions')}. '
-                  'Reading status belongs to the work; everything else belongs '
-                  'to the copy.',
+              ? context.l10n.editionsExplainerOne
+              : context.l10n.editionsExplainerMany(
+                  context.l10n.editionsCopyCount(copies),
+                  context.l10n.editionsEditionCount(details.editions.length),
+                ),
           style: AppText.sans(size: 12, height: 1.5, color: AppColors.faint),
         ),
         const SizedBox(height: 20),
@@ -128,7 +128,7 @@ class _EditionsBody extends ConsumerWidget {
         ],
         const SizedBox(height: 5),
         DashedButton(
-          label: '+ Add another edition',
+          label: context.l10n.editionsAddAnother,
           onPressed: () => context.push(
             Routes.addBook,
             extra: AddBookArgs(
@@ -153,8 +153,6 @@ class _EditionsBody extends ConsumerWidget {
     );
   }
 
-  static String _plural(int n, String one, String many) =>
-      n == 1 ? '$n $one' : '$n $many';
 }
 
 class _EditionCard extends ConsumerWidget {
@@ -205,7 +203,7 @@ class _EditionCard extends ConsumerWidget {
                       children: [
                         Flexible(
                           child: Text(
-                            e.language ?? 'Unknown language',
+                            e.language ?? context.l10n.editionsUnknownLanguage,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppText.sans(size: 14.5, weight: 600),
@@ -214,13 +212,13 @@ class _EditionCard extends ConsumerWidget {
                         const SizedBox(width: 7),
                         if (isPrimary)
                           AppPill(
-                            label: 'Reading copy',
+                            label: context.l10n.editionsReadingCopy,
                             background: AppColors.paperChip,
                             foreground: const Color(0xFF6B635A),
                           )
                         else if (edition.copies.any((c) => c.isGift))
                           AppPill(
-                            label: 'Gift',
+                            label: context.l10n.editionsGiftTag,
                             background: AppColors.paperChip,
                             foreground: const Color(0xFF6B635A),
                           ),
@@ -245,9 +243,15 @@ class _EditionCard extends ConsumerWidget {
                         padding: const EdgeInsets.only(bottom: 3),
                         child: Text(
                           Fmt.dotted([
-                            e.pageCount == null ? null : '${e.pageCount} pp',
+                            e.pageCount == null
+                                ? null
+                                : context.l10n
+                                    .editionsPagesShort(e.pageCount!),
                             copy.isGift
-                                ? 'from ${copy.giftFrom ?? 'a friend'}'
+                                ? context.l10n.editionsFromPerson(
+                                    copy.giftFrom ??
+                                        context.l10n.detailsGiftAFriend,
+                                  )
                                 : Fmt.money(copy.purchasePrice, copy.currency)
                                         == '—'
                                     ? null
@@ -265,7 +269,7 @@ class _EditionCard extends ConsumerWidget {
                       ),
                     if (edition.copies.isEmpty)
                       Text(
-                        'Not owned yet',
+                        context.l10n.editionsNotOwnedYet,
                         style:
                             AppText.sans(size: 11.5, color: AppColors.faint),
                       ),
@@ -280,7 +284,7 @@ class _EditionCard extends ConsumerWidget {
               if (!isPrimary)
                 Expanded(
                   child: SecondaryButton(
-                    label: 'Show as main',
+                    label: context.l10n.editionsShowAsMain,
                     height: 38,
                     fontSize: 13,
                     onPressed: () async {
@@ -288,7 +292,10 @@ class _EditionCard extends ConsumerWidget {
                           .read(databaseProvider)
                           .setPrimaryEdition(details.work.id, e.id);
                       if (context.mounted) {
-                        AppToast.show(context, 'Main edition updated');
+                        AppToast.show(
+                          context,
+                          context.l10n.toastMainEditionUpdated,
+                        );
                       }
                     },
                   ),
@@ -296,7 +303,7 @@ class _EditionCard extends ConsumerWidget {
               if (!isPrimary) const SizedBox(width: 8),
               Expanded(
                 child: SecondaryButton(
-                  label: 'Add another copy',
+                  label: context.l10n.editionsAddAnotherCopy,
                   height: 38,
                   fontSize: 13,
                   onPressed: () => _addCopy(context, ref),
@@ -346,14 +353,15 @@ class _EditionCard extends ConsumerWidget {
   /// Adding a second physical copy of an edition you already own — the design's
   /// "Add another copy".
   Future<void> _addCopy(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Add another copy?',
-      message: 'A second copy of this ${edition.edition.format?.toLowerCase() ?? 'edition'} '
-          'will be added to your shelves. You can fill in where it came from '
-          'afterwards.',
-      confirmLabel: 'Add copy',
-      cancelLabel: 'Cancel',
+      title: l10n.editionsAddCopyTitle,
+      message: l10n.editionsAddCopyMessage(
+        edition.edition.format?.toLowerCase() ?? l10n.editionsGenericFormat,
+      ),
+      confirmLabel: l10n.editionsAddCopyConfirm,
+      cancelLabel: l10n.actionCancel,
       destructive: false,
     );
     if (!confirmed || !context.mounted) return;
@@ -362,6 +370,6 @@ class _EditionCard extends ConsumerWidget {
           edition.edition.id,
           CopyDraft(ownership: Ownership.owned),
         );
-    if (context.mounted) AppToast.show(context, 'Copy added to your library');
+    if (context.mounted) AppToast.show(context, l10n.toastCopyAdded);
   }
 }

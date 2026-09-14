@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/l10n_extensions.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/theme/typography.dart';
 import '../../../../core/widgets/app_buttons.dart';
@@ -29,9 +30,9 @@ class FilterSheet extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Filter', style: AppText.sheetTitle),
+              Text(context.l10n.filterTitle, style: AppText.sheetTitle),
               TextActionButton(
-                label: 'Reset',
+                label: context.l10n.actionReset,
                 fontSize: 13.5,
                 onPressed: query.hasFilters
                     ? () => ref.read(libraryQueryProvider.notifier).clearFilters()
@@ -56,7 +57,7 @@ class FilterSheet extends ConsumerWidget {
             error: (error, _) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 30),
               child: Text(
-                "Filters couldn't be loaded.",
+                context.l10n.filterLoadFailed,
                 style: AppText.sans(size: 13.5, color: AppColors.muted),
               ),
             ),
@@ -65,12 +66,16 @@ class FilterSheet extends ConsumerWidget {
               children: [
                 for (final entry in groups.entries)
                   if (entry.value.isNotEmpty) ...[
-                    SectionLabel(entry.key.title, top: 20, bottom: 9),
+                    SectionLabel(entry.key.display(context.l10n), top: 20, bottom: 9),
                     ChipWrap(
                       children: [
                         for (final option in entry.value)
                           AppChip(
-                            label: option,
+                            // Status options are enum names; everything else is
+                            // a value out of the collection and shows as-is.
+                            label: entry.key == FilterGroup.status
+                                ? ReadingStatus.fromName(option).display(context.l10n)
+                                : option,
                             selected:
                                 query.filters[entry.key]?.contains(option) ??
                                     false,
@@ -87,8 +92,8 @@ class FilterSheet extends ConsumerWidget {
           const SizedBox(height: 24),
           PrimaryButton(
             label: query.hasFilters
-                ? 'Show ${matches ?? 0} ${matches == 1 ? 'book' : 'books'}'
-                : 'Done',
+                ? context.l10n.filterShowBooks(matches ?? 0)
+                : context.l10n.actionDone,
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],
@@ -112,7 +117,7 @@ class SortSheet extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
-            child: Text('Sort by', style: AppText.sheetTitle),
+            child: Text(context.l10n.sortTitle, style: AppText.sheetTitle),
           ),
           for (final option in SortOption.values)
             GestureDetector(
@@ -130,7 +135,7 @@ class SortSheet extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        option.label,
+                        option.display(context.l10n),
                         style: AppText.sans(
                           size: 15,
                           weight: option == current ? 600 : 400,

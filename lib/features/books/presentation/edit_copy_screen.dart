@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n_extensions.dart';
 import '../../../core/providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/tokens.dart';
@@ -110,6 +111,7 @@ class _EditCopyScreenState extends ConsumerState<EditCopyScreen> {
   }
 
   Future<void> _save() async {
+    final l10n = context.l10n;
     final copy = _copy;
     if (copy == null) return;
 
@@ -140,7 +142,7 @@ class _EditCopyScreenState extends ConsumerState<EditCopyScreen> {
     }
 
     if (!mounted) return;
-    AppToast.show(context, 'Copy updated');
+    AppToast.show(context, l10n.toastCopyUpdated);
     context.pop();
   }
 
@@ -173,7 +175,7 @@ class _EditCopyScreenState extends ConsumerState<EditCopyScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Currency', style: AppText.sheetTitle),
+            Text(context.l10n.fieldCurrency, style: AppText.sheetTitle),
             const SizedBox(height: 12),
             ChipWrap(
               children: [
@@ -216,10 +218,10 @@ class _EditCopyScreenState extends ConsumerState<EditCopyScreen> {
         backgroundColor: AppColors.paper,
         body: SafeArea(
           child: MessageState(
-            title: 'Copy not found',
-            message: 'This copy is no longer in your library.',
+            title: context.l10n.editCopyNotFoundTitle,
+            message: context.l10n.editCopyNotFoundMessage,
             titleSize: 22,
-            primaryLabel: 'Back to library',
+            primaryLabel: context.l10n.actionBackToLibrary,
             onPrimary: () => context.go(Routes.library),
           ),
         ),
@@ -239,12 +241,12 @@ class _EditCopyScreenState extends ConsumerState<EditCopyScreen> {
           ),
           children: [
             ModalTopBar(
-              title: 'Edit copy',
+              title: context.l10n.editCopyTitle,
               onCancel: () => context.pop(),
               onSave: _save,
               saveEnabled: !_saving,
             ),
-            const SectionLabel('Reading status', top: 24),
+            SectionLabel(context.l10n.sectionStatus, top: 24),
             ChipWrap(
               children: [
                 for (final status in ReadingStatus.values)
@@ -255,7 +257,7 @@ class _EditCopyScreenState extends ConsumerState<EditCopyScreen> {
                   ),
               ],
             ),
-            const SectionLabel('Rating', top: 24),
+            SectionLabel(context.l10n.sectionRating, top: 24),
             Row(
               children: [
                 StarRating(
@@ -264,12 +266,14 @@ class _EditCopyScreenState extends ConsumerState<EditCopyScreen> {
                 ),
                 const SizedBox(width: 15),
                 Text(
-                  _rating == 0 ? 'Not rated' : _rating.toStringAsFixed(1),
+                  _rating == 0
+                      ? context.l10n.detailsNotRated
+                      : _rating.toStringAsFixed(1),
                   style: AppText.sans(size: 13, color: AppColors.muted2),
                 ),
               ],
             ),
-            const SectionLabel('Ownership', top: 24),
+            SectionLabel(context.l10n.sectionOwnership, top: 24),
             ChipWrap(
               children: [
                 for (final ownership in Ownership.values)
@@ -280,23 +284,23 @@ class _EditCopyScreenState extends ConsumerState<EditCopyScreen> {
                   ),
               ],
             ),
-            const SectionLabel('Purchase', top: 24),
+            SectionLabel(context.l10n.sectionPurchase, top: 24),
             PaperCard(
               children: [
                 PickerFieldRow(
-                  label: 'Date',
+                  label: context.l10n.fieldDate,
                   labelWidth: 100,
                   value: copy.purchaseDate == null
                       ? null
                       : Fmt.date(copy.purchaseDate),
-                  placeholder: 'Not recorded',
+                  placeholder: context.l10n.hintNotRecorded,
                   onTap: _pickDate,
                 ),
                 EditableFieldRow(
-                  label: 'Price',
+                  label: context.l10n.fieldPrice,
                   labelWidth: 100,
                   controller: _price,
-                  hint: 'Not recorded',
+                  hint: context.l10n.hintNotRecorded,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [
@@ -304,30 +308,30 @@ class _EditCopyScreenState extends ConsumerState<EditCopyScreen> {
                   ],
                 ),
                 PickerFieldRow(
-                  label: 'Currency',
+                  label: context.l10n.fieldCurrency,
                   labelWidth: 100,
                   value: copy.currency,
-                  placeholder: 'Choose',
+                  placeholder: context.l10n.hintChoose,
                   onTap: _pickCurrency,
                 ),
                 EditableFieldRow(
-                  label: 'Store',
+                  label: context.l10n.fieldStore,
                   labelWidth: 100,
                   controller: _store,
-                  hint: 'Where you bought it',
+                  hint: context.l10n.hintWhereBought,
                   textCapitalization: TextCapitalization.words,
                 ),
                 EditableFieldRow(
-                  label: 'Gift from',
+                  label: context.l10n.fieldGiftFrom,
                   labelWidth: 100,
                   controller: _giftFrom,
-                  hint: 'Leave blank if purchased',
+                  hint: context.l10n.hintBlankIfPurchased,
                   textCapitalization: TextCapitalization.words,
                   last: true,
                 ),
               ],
             ),
-            const SectionLabel('Condition', top: 24),
+            SectionLabel(context.l10n.sectionCondition, top: 24),
             ChipWrap(
               children: [
                 for (final condition in Condition.values)
@@ -341,18 +345,18 @@ class _EditCopyScreenState extends ConsumerState<EditCopyScreen> {
                   ),
               ],
             ),
-            const SectionLabel('Location', top: 24),
+            SectionLabel(context.l10n.sectionLocation, top: 24),
             PaperCard(
               padding: const EdgeInsets.all(14),
               children: [
                 _LocationBreadcrumb(controller: _location),
               ],
             ),
-            const SectionLabel('Tags', top: 24),
+            SectionLabel(context.l10n.sectionTags, top: 24),
             PaperCard(
               children: [
                 EditableFieldRow(
-                  label: 'Tags',
+                  label: context.l10n.sectionTags,
                   labelWidth: 60,
                   controller: _tags,
                   hint: 'dystopia, re-read',
@@ -361,7 +365,7 @@ class _EditCopyScreenState extends ConsumerState<EditCopyScreen> {
                 ),
               ],
             ),
-            const SectionLabel('Personal notes', top: 24),
+            SectionLabel(context.l10n.sectionPersonalNotes, top: 24),
             Container(
               constraints: const BoxConstraints(minHeight: 96),
               padding: const EdgeInsets.all(14),
@@ -386,7 +390,7 @@ class _EditCopyScreenState extends ConsumerState<EditCopyScreen> {
                   isDense: true,
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.zero,
-                  hintText: 'Anything worth remembering about this copy…',
+                  hintText: context.l10n.hintNotes,
                   hintStyle: AppText.serif(
                     size: 15,
                     color: AppColors.faint,
@@ -397,7 +401,7 @@ class _EditCopyScreenState extends ConsumerState<EditCopyScreen> {
             ),
             const SizedBox(height: 26),
             DestructiveButton(
-              label: 'Remove this copy',
+              label: context.l10n.detailsRemoveCopy,
               onPressed: () async {
                 final details = _details;
                 if (details == null) return;
@@ -454,14 +458,14 @@ class _LocationBreadcrumbState extends State<_LocationBreadcrumb> {
               isDense: true,
               border: InputBorder.none,
               contentPadding: EdgeInsets.zero,
-              hintText: 'Home › Bedroom › Bookshelf 2 › Shelf 4',
+              hintText: context.l10n.hintLocation,
               hintStyle: AppText.sans(size: 13.5, color: AppColors.faint),
             ),
             onSubmitted: (_) => setState(() => _editing = false),
           ),
           const SizedBox(height: 6),
           Text(
-            'Separate each level with ›',
+            context.l10n.locationHint,
             style: AppText.sans(size: 11.5, color: AppColors.muted2),
           ),
         ],
@@ -476,7 +480,7 @@ class _LocationBreadcrumbState extends State<_LocationBreadcrumb> {
         children: [
           if (parts.isEmpty)
             Text(
-              'No location yet',
+              context.l10n.locationNone,
               style: AppText.sans(size: 13.5, weight: 500, color: AppColors.faint),
             )
           else
@@ -500,7 +504,7 @@ class _LocationBreadcrumbState extends State<_LocationBreadcrumb> {
             ),
           const SizedBox(height: 6),
           Text(
-            'Tap to change it',
+            context.l10n.locationTapToChange,
             style: AppText.sans(size: 11.5, color: AppColors.muted2),
           ),
         ],

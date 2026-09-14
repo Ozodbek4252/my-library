@@ -70,28 +70,6 @@ class ScanFailure implements Exception {
   const ScanFailure(this.kind, {this.isbn});
   final ScanFailureKind kind;
   final String? isbn;
-
-  String get title => switch (kind) {
-        ScanFailureKind.invalidBarcode => "Couldn't read that barcode",
-        ScanFailureKind.notFound => "We don't know that ISBN",
-        ScanFailureKind.network => 'No connection',
-        ScanFailureKind.unknown => 'Something went wrong',
-      };
-
-  String get message => switch (kind) {
-        ScanFailureKind.invalidBarcode =>
-          'Low light, or the code may be creased. Try again, or type the 13 '
-              'digits printed under it.',
-        ScanFailureKind.notFound =>
-          'No book matches ${isbn ?? 'that code'}. It may be a local printing. '
-              'You can still add it by hand.',
-        ScanFailureKind.network =>
-          "We couldn't reach the book lookup. Your library still works "
-              'offline — try again, or enter the details yourself.',
-        ScanFailureKind.unknown =>
-          'The lookup failed unexpectedly. Try again, or enter the details '
-              'yourself.',
-      };
 }
 
 /// Turns a barcode into a verdict: ISBN → edition → work → the user's shelves.

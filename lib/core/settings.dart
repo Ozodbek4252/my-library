@@ -1,13 +1,36 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/models/enums.dart';
 import 'providers.dart';
+
+/// The languages the interface is translated into. English is the default:
+/// the app does not follow the system language, because a phone set to
+/// Russian does not mean its owner wants this app in Russian.
+enum AppLanguage {
+  english('en', 'English'),
+  uzbek('uz', "O'zbekcha"),
+  russian('ru', 'Русский');
+
+  const AppLanguage(this.code, this.endonym);
+  final String code;
+
+  /// The language's name in itself. A picker that translated these would
+  /// spell every option in a language the reader may not read.
+  final String endonym;
+
+  Locale get locale => Locale(code);
+
+  static AppLanguage fromCode(String? code) => AppLanguage.values
+      .firstWhere((l) => l.code == code, orElse: () => AppLanguage.english);
+}
 
 /// The handful of preferences the design says are remembered per user: the
 /// grid/list choice, the sort order, whether the stats strip is shown, and
 /// whether onboarding has been seen.
 class AppSettings {
   const AppSettings({
+    this.language = AppLanguage.english,
     this.onboardingComplete = false,
     this.libraryView = LibraryView.grid,
     this.sort = SortOption.recentlyAdded,
@@ -15,6 +38,7 @@ class AppSettings {
     this.showCaptions = true,
   });
 
+  final AppLanguage language;
   final bool onboardingComplete;
   final LibraryView libraryView;
   final SortOption sort;
@@ -22,6 +46,7 @@ class AppSettings {
   final bool showCaptions;
 
   AppSettings copyWith({
+    AppLanguage? language,
     bool? onboardingComplete,
     LibraryView? libraryView,
     SortOption? sort,
@@ -29,6 +54,7 @@ class AppSettings {
     bool? showCaptions,
   }) =>
       AppSettings(
+        language: language ?? this.language,
         onboardingComplete: onboardingComplete ?? this.onboardingComplete,
         libraryView: libraryView ?? this.libraryView,
         sort: sort ?? this.sort,
@@ -43,11 +69,13 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const _sort = 'library_sort';
   static const _stats = 'library_stats_strip';
   static const _captions = 'library_captions';
+  static const _language = 'app_language';
 
   @override
   AppSettings build() {
     final prefs = ref.watch(preferencesProvider);
     return AppSettings(
+      language: AppLanguage.fromCode(prefs.getString(_language)),
       onboardingComplete: prefs.getBool(_onboarding) ?? false,
       libraryView: prefs.getString(_view) == LibraryView.list.name
           ? LibraryView.list
@@ -56,6 +84,11 @@ class SettingsNotifier extends Notifier<AppSettings> {
       showStatsStrip: prefs.getBool(_stats) ?? true,
       showCaptions: prefs.getBool(_captions) ?? true,
     );
+  }
+
+  Future<void> setLanguage(AppLanguage language) async {
+    state = state.copyWith(language: language);
+    await ref.read(preferencesProvider).setString(_language, language.code);
   }
 
   Future<void> completeOnboarding() async {

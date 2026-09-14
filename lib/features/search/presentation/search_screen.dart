@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n_extensions.dart';
 import '../../../core/providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/tokens.dart';
@@ -122,7 +123,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 isDense: true,
                                 border: InputBorder.none,
                                 contentPadding: EdgeInsets.zero,
-                                hintText: 'Title, author, ISBN…',
+                                hintText: context.l10n.librarySearchHint,
                                 hintStyle: AppText.sans(
                                   size: 14.5,
                                   color: AppColors.muted2,
@@ -156,7 +157,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Text(
-                        'Cancel',
+                        context.l10n.actionCancel,
                         style: AppText.sans(
                           size: 14.5,
                           weight: 600,
@@ -221,7 +222,7 @@ class _SearchResults extends ConsumerWidget {
         ),
       ),
       error: (error, _) => ErrorStateView(
-        message: 'The search could not be run.',
+        message: context.l10n.searchFailed,
         onRetry: () => ref.invalidate(_searchResultsProvider(query)),
       ),
       data: (entries) {
@@ -240,7 +241,7 @@ class _SearchResults extends ConsumerWidget {
           ),
           children: [
             Text(
-              '${entries.length} in your library',
+              context.l10n.searchInYourLibrary(entries.length),
               style: AppText.sans(
                 size: 11,
                 letterSpacing: .02,
@@ -273,18 +274,17 @@ class _NoResults extends ConsumerWidget {
       padding: const EdgeInsets.only(top: 120, bottom: 40),
       children: [
         MessageState(
-          title: 'No matches',
-          message: 'Nothing in your library for “$query”. It may be a book you '
-              "don't own yet.",
+          title: context.l10n.libraryNoMatchesTitle,
+          message: context.l10n.libraryNoMatchesFor(query),
           icon: AppIcons.search,
           titleSize: 22,
           maxMessageWidth: 230,
-          primaryLabel: 'Scan its barcode',
+          primaryLabel: context.l10n.actionScanBarcode,
           onPrimary: () {
             context.pop();
             context.push(Routes.scanner);
           },
-          secondaryLabel: 'Add it manually',
+          secondaryLabel: context.l10n.actionAddItManually,
           onSecondary: () {
             context.pop();
             context.push(Routes.addBook);
@@ -318,6 +318,7 @@ class _SearchAllEditionsState extends ConsumerState<_SearchAllEditions> {
   List<BookMetadata> _results = const [];
 
   Future<void> _search() async {
+    final l10n = context.l10n;
     setState(() {
       _expanded = true;
       _loading = true;
@@ -332,9 +333,8 @@ class _SearchAllEditionsState extends ConsumerState<_SearchAllEditions> {
       if (mounted) {
         setState(
           () => _error = e.failure == MetadataFailure.network
-              ? "We couldn't reach the book lookup. Your own library is still "
-                  'fully searchable.'
-              : 'The lookup failed. Try again in a moment.',
+              ? l10n.searchLookupUnreachable
+              : l10n.searchLookupFailed,
         );
       }
     } finally {
@@ -349,13 +349,13 @@ class _SearchAllEditionsState extends ConsumerState<_SearchAllEditions> {
         child: Text.rich(
           TextSpan(
             children: [
-              const TextSpan(text: 'Not in your library? '),
+              TextSpan(text: '${context.l10n.searchNotInLibrary} '),
               WidgetSpan(
                 alignment: PlaceholderAlignment.middle,
                 child: GestureDetector(
                   onTap: _search,
                   child: Text(
-                    'Search all editions',
+                    context.l10n.searchAllEditions,
                     style: AppText.sans(
                       size: 12.5,
                       weight: 600,
@@ -374,7 +374,7 @@ class _SearchAllEditionsState extends ConsumerState<_SearchAllEditions> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionLabel('All editions', top: 6),
+        SectionLabel(context.l10n.searchAllEditionsSection, top: 6),
         if (_loading)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 20),
@@ -405,7 +405,7 @@ class _SearchAllEditionsState extends ConsumerState<_SearchAllEditions> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
-              'No editions found for “${widget.query}”.',
+              context.l10n.searchNoEditionsFound(widget.query),
               style: AppText.sans(size: 13, color: AppColors.muted),
             ),
           )
@@ -468,7 +468,7 @@ class _ExternalResultRow extends ConsumerWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    entry.authorLine,
+                    context.l10n.authorsOf(entry.work.authors),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.listSecondary,
@@ -529,7 +529,7 @@ class _SearchSuggestions extends ConsumerWidget {
           ),
           children: [
             if (suggestions.isNotEmpty) ...[
-              const SectionLabel('Try', top: 24),
+              SectionLabel(context.l10n.searchTry, top: 24),
               ChipWrap(
                 children: [
                   for (final suggestion in suggestions)
@@ -541,7 +541,7 @@ class _SearchSuggestions extends ConsumerWidget {
               ),
             ],
             if (recents.isNotEmpty) ...[
-              const SectionLabel('Recent', top: 26, bottom: 4),
+              SectionLabel(context.l10n.searchRecent, top: 26, bottom: 4),
               for (final recent in recents)
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
@@ -654,12 +654,12 @@ class _ScanPromo extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'In a bookstore?',
+                  context.l10n.searchPromoTitle,
                   style: AppText.sans(size: 13.5, weight: 600),
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  'Scanning is faster than typing.',
+                  context.l10n.searchPromoSubtitle,
                   style: AppText.sans(size: 12, color: AppColors.muted2),
                 ),
               ],
@@ -679,7 +679,7 @@ class _ScanPromo extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadius.chip),
               ),
               child: Text(
-                'Scan',
+                context.l10n.searchPromoAction,
                 style: AppText.sans(
                   size: 13,
                   weight: 600,

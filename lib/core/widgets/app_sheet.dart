@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n_extensions.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 import 'app_buttons.dart';
@@ -99,7 +100,7 @@ Future<bool> showConfirmDialog(
   required String title,
   required String message,
   required String confirmLabel,
-  String cancelLabel = 'Keep it',
+  String? cancelLabel,
   bool destructive = true,
 }) async {
   final result = await showDialog<bool>(
@@ -153,7 +154,7 @@ Future<bool> showConfirmDialog(
                   ),
                 ),
                 child: Text(
-                  cancelLabel,
+                  cancelLabel ?? context.l10n.actionKeepIt,
                   style: AppText.sans(
                     size: 15,
                     weight: 500,

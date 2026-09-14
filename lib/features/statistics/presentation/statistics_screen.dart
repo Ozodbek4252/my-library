@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n_extensions.dart';
 import '../../../core/providers.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/theme/tokens.dart';
@@ -20,10 +21,6 @@ final statisticsProvider = StreamProvider<ReadingStatistics>(
 /// Reading statistics for the current year, computed from the reading log.
 class StatisticsScreen extends ConsumerWidget {
   const StatisticsScreen({super.key});
-
-  static const _monthLetters = [
-    'J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D',
-  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,7 +41,7 @@ class StatisticsScreen extends ConsumerWidget {
         ),
         error: (error, _) => SafeArea(
           child: ErrorStateView(
-            message: 'Your statistics could not be calculated.',
+            message: context.l10n.statsError,
             onRetry: () => ref.invalidate(statisticsProvider),
           ),
         ),
@@ -79,41 +76,43 @@ class _StatisticsBody extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        Text('This year', style: AppText.screenTitle),
+        Text(context.l10n.statsThisYear, style: AppText.screenTitle),
         const SizedBox(height: 3),
         Text(
-          '${Fmt.shortDate(stats.rangeStart)} – ${Fmt.date(stats.rangeEnd)}',
+          context.l10n.statsRange(
+            Fmt.shortDate(stats.rangeStart),
+            Fmt.date(stats.rangeEnd),
+          ),
           style: AppText.sans(size: 12.5, color: AppColors.muted2),
         ),
         const SizedBox(height: 20),
         _MetricGrid(stats: stats),
         if (!stats.hasReadAnything) ...[
           const SizedBox(height: 40),
-          const MessageState(
-            title: 'No finished books yet',
-            message: 'Mark a book as read and these figures start filling in. '
-                'Nothing here is made up — it all comes from your own shelves.',
+          MessageState(
+            title: context.l10n.statsEmptyTitle,
+            message: context.l10n.statsEmptyMessage,
             titleSize: 22,
             maxMessageWidth: 270,
           ),
         ] else ...[
-          const SectionLabel('Books finished per month', bottom: 12),
+          SectionLabel(context.l10n.statsBooksPerMonth, bottom: 12),
           _MonthChart(stats: stats),
           const SizedBox(height: 10),
           Text(
-            _bestMonthCaption(stats),
+            _bestMonthCaption(context, stats),
             style: AppText.sans(size: 11.5, color: AppColors.muted2),
           ),
           if (stats.byLanguage.isNotEmpty) ...[
-            const SectionLabel('By language', top: 28, bottom: 12),
+            SectionLabel(context.l10n.statsByLanguage, top: 28, bottom: 12),
             _LanguageBar(stats: stats),
           ],
           if (stats.byGenre.isNotEmpty) ...[
-            const SectionLabel('By genre', top: 28),
+            SectionLabel(context.l10n.statsByGenre, top: 28),
             _GenreBars(stats: stats),
           ],
           if (stats.byAuthor.isNotEmpty) ...[
-            const SectionLabel('Most read authors', top: 28),
+            SectionLabel(context.l10n.statsMostReadAuthors, top: 28),
             PaperCard(
               children: [
                 for (var i = 0; i < stats.byAuthor.length; i++)
@@ -130,16 +129,24 @@ class _StatisticsBody extends StatelessWidget {
     );
   }
 
-  static String _bestMonthCaption(ReadingStatistics stats) {
+  static String _bestMonthCaption(
+    BuildContext context,
+    ReadingStatistics stats,
+  ) {
     final index = stats.bestMonthIndex;
-    if (index < 0) return 'No finished books yet this year.';
-    final name = Fmt.monthYear(DateTime(stats.year, index + 1)).split(' ').first;
-    final books = stats.booksPerMonth[index];
-    final pages = stats.pagesPerMonth[index];
-    return 'Best month: $name, $books ${books == 1 ? 'book' : 'books'} · '
-        '${Fmt.count(pages)} pages';
+    if (index < 0) return context.l10n.statsNoneYet;
+    return context.l10n.statsBestMonth(
+      Fmt.monthName(DateTime(stats.year, index + 1)),
+      context.l10n.bookCount(stats.booksPerMonth[index]),
+      Fmt.count(stats.pagesPerMonth[index]),
+    );
   }
 }
+
+/// Genres, languages and authors are shown as the user stored them. Only the
+/// folded tail is a word of ours, so only that one is translated.
+String _sliceLabel(BuildContext context, CountSlice slice) =>
+    slice.isOther ? context.l10n.statsOther : slice.label;
 
 class _MetricGrid extends StatelessWidget {
   const _MetricGrid({required this.stats});
@@ -149,14 +156,14 @@ class _MetricGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cells = [
-      (Fmt.count(stats.booksReadThisYear), 'Books read this year'),
-      (Fmt.count(stats.pagesReadThisYear), 'Pages read'),
-      (Fmt.count(stats.currentlyReading), 'Currently reading'),
+      (Fmt.count(stats.booksReadThisYear), context.l10n.statsBooksRead),
+      (Fmt.count(stats.pagesReadThisYear), context.l10n.statsPagesRead),
+      (Fmt.count(stats.currentlyReading), context.l10n.statsCurrentlyReading),
       (
         stats.averageRating == null
             ? '—'
             : stats.averageRating!.toStringAsFixed(1),
-        'Average rating'
+        context.l10n.statsAverageRating,
       ),
     ];
 
@@ -260,7 +267,11 @@ class _MonthChart extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      StatisticsScreen._monthLetters[i],
+                      // The month's own initial, in the interface language.
+                      Fmt.monthName(DateTime(stats.year, i + 1))
+                          .characters
+                          .first
+                          .toUpperCase(),
                       maxLines: 1,
                       style: AppText.sans(size: 8.5, color: AppColors.faint),
                     ),
@@ -321,7 +332,7 @@ class _LanguageBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '${stats.byLanguage[i].label} '
+                    '${_sliceLabel(context, stats.byLanguage[i])} '
                     '${stats.byLanguage[i].percent.round()}%',
                     style: AppText.sans(size: 12, color: AppColors.inkBody),
                   ),
@@ -353,7 +364,7 @@ class _GenreBars extends StatelessWidget {
                 SizedBox(
                   width: 88,
                   child: Text(
-                    slice.label,
+                    _sliceLabel(context, slice),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.sans(size: 12.5, color: AppColors.inkBody),
@@ -433,14 +444,14 @@ class _AuthorRow extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                slice.label,
+                _sliceLabel(context, slice),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppText.sans(size: 13.5, weight: 500),
               ),
             ),
             Text(
-              slice.count == 1 ? '1 book' : '${slice.count} books',
+              context.l10n.bookCount(slice.count),
               style: AppText.sans(size: 12.5, color: AppColors.muted2),
             ),
           ],

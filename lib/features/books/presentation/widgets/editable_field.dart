@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../core/l10n_extensions.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/theme/typography.dart';
 import '../../../../core/widgets/app_icons.dart';
@@ -165,14 +166,15 @@ class ModalTopBar extends StatelessWidget {
     required this.title,
     required this.onCancel,
     required this.onSave,
-    this.saveLabel = 'Save',
+    this.saveLabel,
     this.saveEnabled = true,
   });
 
   final String title;
   final VoidCallback onCancel;
   final VoidCallback? onSave;
-  final String saveLabel;
+  /// Defaults to "Save" in the interface language.
+  final String? saveLabel;
   final bool saveEnabled;
 
   @override
@@ -185,7 +187,7 @@ class ModalTopBar extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Text(
-              'Cancel',
+              context.l10n.actionCancel,
               style: AppText.sans(
                 size: 14.5,
                 weight: 600,
@@ -207,7 +209,7 @@ class ModalTopBar extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Text(
-              saveLabel,
+              saveLabel ?? context.l10n.actionSave,
               style: AppText.sans(
                 size: 14.5,
                 weight: 600,

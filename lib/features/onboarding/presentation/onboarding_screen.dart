@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n_extensions.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/settings.dart';
 import '../../../core/theme/tokens.dart';
@@ -80,9 +81,9 @@ class OnboardingScreen extends ConsumerWidget {
                   Text.rich(
                     TextSpan(
                       children: [
-                        const TextSpan(text: 'Every book you own,\n'),
+                        TextSpan(text: '${context.l10n.onboardingHeadlineFirst}\n'),
                         TextSpan(
-                          text: 'in your pocket.',
+                          text: context.l10n.onboardingHeadlineSecond,
                           style: AppText.onboardingHeadline.copyWith(
                             fontStyle: FontStyle.italic,
                             color: AppColors.highlight,
@@ -96,8 +97,7 @@ class OnboardingScreen extends ConsumerWidget {
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 300),
                     child: Text(
-                      "Scan a barcode in the bookstore and know in two seconds "
-                      "whether it's already on your shelf.",
+                      context.l10n.onboardingSubhead,
                       style: AppText.sans(
                         size: 14.5,
                         height: 1.5,
@@ -107,14 +107,14 @@ class OnboardingScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 32),
                   _OnboardingButton(
-                    label: 'Start my library',
+                    label: context.l10n.onboardingStart,
                     background: AppColors.onboardingText,
                     foreground: AppColors.ink,
                     onTap: () => _start(context, ref, Routes.library),
                   ),
                   const SizedBox(height: 10),
                   _OnboardingButton(
-                    label: 'Scan my first book',
+                    label: context.l10n.onboardingScanFirst,
                     background: Colors.transparent,
                     foreground: const Color(0xFFD6CCBC),
                     border: true,

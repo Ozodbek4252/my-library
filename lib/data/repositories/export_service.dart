@@ -238,7 +238,7 @@ class ExportService {
         ..sort((a, b) => a.work.title.compareTo(b.work.title));
       for (final row in items) {
         buffer.writeln(
-          '  ${row.work.title} — ${Fmt.authors(row.work.authors)}'
+          '  ${row.work.title} — ${row.work.authors.join('; ')}'
           '${row.edition?.language == null ? '' : ' (${row.edition!.language})'}',
         );
       }

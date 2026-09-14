@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n_extensions.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/settings.dart';
 import '../../../core/theme/tokens.dart';
@@ -107,9 +108,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               hasScrollBody: false,
               child: Center(
                 child: ErrorStateView(
-                  title: "Your library couldn't be read",
-                  message: 'The local database returned an error. Pull down to '
-                      'try again.',
+                  title: context.l10n.libraryErrorTitle,
+                  message: context.l10n.libraryErrorMessage,
                   onRetry: () => ref.invalidate(libraryEntriesProvider),
                 ),
               ),
@@ -120,19 +120,20 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(top: 60, bottom: 120),
                 child: MessageState(
-                  title: 'No matches',
+                  title: context.l10n.libraryNoMatchesTitle,
                   message: query.search.isNotEmpty
-                      ? 'Nothing in your library for “${query.search}”. It may '
-                          "be a book you don't own yet."
-                      : 'No books match these filters.',
+                      ? context.l10n.libraryNoMatchesFor(query.search)
+                      : context.l10n.libraryNoFilterMatches,
                   icon: AppIcons.search,
                   titleSize: 22,
                   maxMessageWidth: 230,
-                  primaryLabel: query.hasFilters ? 'Clear filters' : 'Scan its barcode',
+                  primaryLabel: query.hasFilters
+                      ? context.l10n.libraryClearFilters
+                      : context.l10n.actionScanBarcode,
                   onPrimary: query.hasFilters
                       ? () => ref.read(libraryQueryProvider.notifier).clearFilters()
                       : () => context.push(Routes.scanner),
-                  secondaryLabel: 'Add it manually',
+                  secondaryLabel: context.l10n.actionAddItManually,
                   onSecondary: () => context.push(Routes.addBook),
                 ),
               ),
@@ -179,14 +180,14 @@ class _LibraryHeader extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Library', style: AppText.screenTitle),
+                  Text(context.l10n.libraryTitle, style: AppText.screenTitle),
                   const SizedBox(height: 3),
                   Text(
                     Fmt.dotted([
-                      Fmt.pluralBooks(total),
+                      context.l10n.bookCount(total),
                       shelves == null || shelves == 0
                           ? null
-                          : '$shelves ${shelves == 1 ? 'shelf' : 'shelves'}',
+                          : context.l10n.libraryShelves(shelves),
                     ]),
                     style: AppText.sans(size: 12.5, color: AppColors.muted2),
                   ),
@@ -214,10 +215,10 @@ class _LibraryHeader extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  _StatCell(value: stats.total, label: 'Total'),
-                  _StatCell(value: stats.unread, label: 'Unread'),
-                  _StatCell(value: stats.reading, label: 'Reading'),
-                  _StatCell(value: stats.read, label: 'Read'),
+                  _StatCell(value: stats.total, label: context.l10n.libraryStatTotal),
+                  _StatCell(value: stats.unread, label: context.l10n.libraryStatUnread),
+                  _StatCell(value: stats.reading, label: context.l10n.libraryStatReading),
+                  _StatCell(value: stats.read, label: context.l10n.libraryStatRead),
                 ],
               ),
             ),
@@ -248,7 +249,7 @@ class _LibraryHeader extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           query.search.isEmpty
-                              ? 'Title, author, ISBN…'
+                              ? context.l10n.librarySearchHint
                               : query.search,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -306,13 +307,15 @@ class _LibraryHeader extends ConsumerWidget {
             children: [
               for (final (group, value) in query.activeFilters)
                 RemovableFilterPill(
-                  label: value,
+                  label: group == FilterGroup.status
+                      ? ReadingStatus.fromName(value).display(context.l10n)
+                      : value,
                   onRemove: () => ref
                       .read(libraryQueryProvider.notifier)
                       .toggleFilter(group, value),
                 ),
               TextActionButtonSmall(
-                label: 'Clear',
+                label: context.l10n.actionClear,
                 onPressed: () =>
                     ref.read(libraryQueryProvider.notifier).clearFilters(),
               ),
@@ -321,7 +324,11 @@ class _LibraryHeader extends ConsumerWidget {
         ],
         const SizedBox(height: 14),
         Text(
-          '$matches of $total shown · sorted by ${query.sort.label.toLowerCase()}',
+          context.l10n.libraryCountLine(
+            matches,
+            total,
+            query.sort.display(context.l10n).toLowerCase(),
+          ),
           style: AppText.sans(
             size: 11,
             letterSpacing: .02,
@@ -560,12 +567,12 @@ class _LibraryLoading extends StatelessWidget {
   const _LibraryLoading();
 
   @override
-  Widget build(BuildContext context) => const SingleChildScrollView(
-        padding: EdgeInsets.only(
+  Widget build(BuildContext context) => SingleChildScrollView(
+        padding: const EdgeInsets.only(
           top: AppSpacing.screenTop,
           bottom: AppSpacing.navClearance,
         ),
-        child: LibrarySkeleton(message: 'Opening your library…'),
+        child: LibrarySkeleton(message: context.l10n.libraryLoading),
       );
 }
 
@@ -592,7 +599,7 @@ class _EmptyLibrary extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Library',
+                    context.l10n.libraryTitle,
                     style: AppText.serif(size: 30, letterSpacing: -.01),
                   ),
                   Expanded(
@@ -600,13 +607,12 @@ class _EmptyLibrary extends StatelessWidget {
                       child: Transform.translate(
                         offset: const Offset(0, -40),
                         child: MessageState(
-                          title: 'Your shelves are empty',
-                          message: 'Scan the barcode on a book you own — the '
-                              'rest fills itself in.',
+                          title: context.l10n.libraryEmptyTitle,
+                          message: context.l10n.libraryEmptyMessage,
                           leading: const _DashedCovers(),
-                          primaryLabel: 'Scan a book',
+                          primaryLabel: context.l10n.actionScanBook,
                           onPrimary: () => context.push(Routes.scanner),
-                          secondaryLabel: 'Add manually',
+                          secondaryLabel: context.l10n.actionAddManually,
                           onSecondary: () => context.push(Routes.addBook),
                         ),
                       ),
