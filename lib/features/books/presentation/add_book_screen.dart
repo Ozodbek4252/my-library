@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/routing/routes.dart';
+import '../../../core/utils/cover_picker.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../core/theme/typography.dart';
 import '../../../core/utils/isbn.dart';
@@ -76,6 +76,11 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
   /// file untouched.
   final _discardedCovers = <String>[];
 
+  /// Covers stored during this edit. If the edit is abandoned none of them
+  /// were ever referenced by a book, so they go with it.
+  final _pickedCovers = <String>[];
+  bool _saved = false;
+
   bool get _isEditing => widget.draft?.workId != null;
 
   @override
@@ -88,6 +93,12 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
   void dispose() {
     for (final controller in _controllers.values) {
       controller.dispose();
+    }
+    // Nothing saved means nothing is pointing at the files this edit created.
+    if (!_saved) {
+      for (final path in _pickedCovers) {
+        unawaited(const ImageStore().delete(path));
+      }
     }
     super.dispose();
   }
@@ -212,11 +223,14 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
     setState(() => _saving = true);
     final db = ref.read(databaseProvider);
 
-    // The edit is going through, so the covers it replaced are now orphans.
+    // The edit is going through, so the covers it replaced are now orphans,
+    // and the one it kept must survive this screen.
+    _saved = true;
     for (final path in _discardedCovers) {
       unawaited(const ImageStore().delete(path));
     }
     _discardedCovers.clear();
+    _pickedCovers.removeWhere((path) => path == _draft.coverImagePath);
 
     try {
       if (_isEditing) {
@@ -248,6 +262,9 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
       context.pop();
       await _offerToShare();
     } catch (e) {
+      // Nothing was written, so the cover this edit picked is still an orphan
+      // and must be cleaned up if the screen is closed.
+      _saved = false;
       if (!mounted) return;
       setState(() => _saving = false);
       AppToast.show(context, "Couldn't save this book", success: false);
@@ -281,7 +298,9 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
             Text('Cover', style: AppText.sheetTitle),
             const SizedBox(height: 6),
             Text(
-              'Photograph the book, or pick a picture you already have.',
+              'Photograph the book, or pick a picture you already have. You '
+              'frame it next — drag any edge, or start from the 2:3 a cover '
+              'is shown at.',
               style: AppText.sans(
                 size: 13,
                 height: 1.5,
@@ -303,6 +322,14 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
                   Navigator.of(sheetContext).pop(_CoverAction.gallery),
             ),
             if (existing != null && existing.isNotEmpty) ...[
+              const SizedBox(height: 9),
+              SecondaryButton(
+                label: 'Adjust the crop',
+                height: 50,
+                fontSize: 15,
+                onPressed: () =>
+                    Navigator.of(sheetContext).pop(_CoverAction.recrop),
+              ),
               const SizedBox(height: 9),
               DestructiveButton(
                 label: 'Remove cover',
@@ -327,22 +354,27 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
 
     setState(() => _pickingCover = true);
     try {
-      final picked = await ImagePicker().pickImage(
-        source: action == _CoverAction.camera
-            ? ImageSource.camera
-            : ImageSource.gallery,
-        maxWidth: 1400,
-        imageQuality: 88,
-      );
-      if (picked == null || !mounted) return;
+      const picker = CoverPicker();
 
-      final stored = await const ImageStore().save(picked.path);
+      // Re-framing works on the file already stored, so backing out of the
+      // cropper leaves the existing cover exactly as it was.
+      final cropped = action == _CoverAction.recrop
+          ? await picker.crop(existing!)
+          : await picker.pickAndCrop(
+              source: action == _CoverAction.camera
+                  ? CoverSource.camera
+                  : CoverSource.gallery,
+            );
+      if (cropped == null || !mounted) return;
+
+      final stored = await const ImageStore().save(cropped);
       if (!mounted) return;
 
       setState(() {
         if (existing != null && existing.isNotEmpty) {
           _discardedCovers.add(existing);
         }
+        _pickedCovers.add(stored);
         _draft.coverImagePath = stored;
         // A picture the user chose outranks whatever a provider supplied.
         _draft.coverUrl = null;
@@ -351,9 +383,11 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
       if (!mounted) return;
       AppToast.show(
         context,
-        action == _CoverAction.camera
-            ? "Couldn't open the camera"
-            : "Couldn't open your pictures",
+        switch (action) {
+          _CoverAction.camera => "Couldn't open the camera",
+          _CoverAction.gallery => "Couldn't open your pictures",
+          _ => "Couldn't open the cropper",
+        },
         success: false,
       );
     } finally {
@@ -651,7 +685,7 @@ class _ScanIsbnButton extends StatelessWidget {
       );
 }
 
-enum _CoverAction { camera, gallery, remove }
+enum _CoverAction { camera, gallery, recrop, remove }
 
 class _CoverRow extends StatelessWidget {
   const _CoverRow({

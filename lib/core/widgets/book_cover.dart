@@ -150,9 +150,14 @@ class _CoverSurface extends StatelessWidget {
       children: [
         ColoredBox(color: background),
         if (localPath != null && localPath.isNotEmpty)
+          // A picture the user framed themselves is shown whole. Filling the
+          // slot instead would crop their crop, which is the one thing the
+          // framing step exists to prevent. A cover cropped at 2:3 — the
+          // default — fills it exactly either way; an odd shape sits on the
+          // placeholder colour rather than losing its edges.
           Image.file(
             File(localPath),
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
             // A photo whose file has gone falls back to the placeholder rather
             // than to a broken-image icon.
             errorBuilder: (context, _, _) => _placeholder(foreground),

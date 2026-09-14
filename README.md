@@ -63,15 +63,23 @@ lib/
 An edition can have a cover from three places, in this order:
 
 1. **A picture the user supplied** — tap the cover on the Add or Edit screen to
-   photograph the book or pick an image. This is the answer for a book with no
-   barcode, where no provider has anything to offer.
+   photograph the book or pick an image, then frame it. This is the answer for
+   a book with no barcode, where no provider has anything to offer.
+
+   The crop is **free-form** — every edge drags independently — and opens at
+   **2:3**, the ratio covers are drawn at, so the common case fills the slot
+   exactly. Whatever shape comes back is then shown *whole*: a user-framed
+   cover uses `BoxFit.contain`, not `cover`, because re-cropping someone's
+   crop is the one thing the framing step exists to prevent. An existing cover
+   can be re-framed without picking the picture again.
 2. **A cover URL** from the lookup service, cached on device.
 3. **The typographic placeholder** — a coloured block with the title and author,
    used whenever there is no artwork and whenever an image fails to load.
 
 Picked images are copied out of the system cache into the app's own directory,
-because the picker hands back a file the system may delete. Replaced and removed
-covers are cleaned up on save, and a deleted edition takes its cover with it.
+because the picker and the cropper both hand back files the system may delete.
+Replaced and removed covers are cleaned up on save, abandoning the editor
+deletes whatever it picked, and a deleted edition takes its cover with it.
 
 ## The lookup service
 

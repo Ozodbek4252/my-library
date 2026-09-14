@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:my_library/core/widgets/book_cover.dart';
 import 'package:my_library/core/widgets/layout.dart';
 import 'package:my_library/core/widgets/pills.dart';
 import 'package:my_library/domain/models/enums.dart';
@@ -136,6 +138,53 @@ void main() {
         tester.getSize(find.byType(OutlinedSurface)),
         const Size(200, 80),
         reason: 'the fix must not change any dimensions',
+      );
+    });
+  });
+
+  group('BookCover', () {
+    testWidgets('a fetched cover fills the slot', (tester) async {
+      await pumpIn(
+        tester,
+        const SizedBox(
+          width: 100,
+          height: 150,
+          child: BookCover(
+            title: 'A book',
+            coverUrl: 'https://example.com/cover.jpg',
+            width: 100,
+            height: 150,
+          ),
+        ),
+      );
+
+      final image = tester.widget<CachedNetworkImage>(
+        find.byType(CachedNetworkImage),
+      );
+      expect(image.fit, BoxFit.cover);
+    });
+
+    testWidgets('a cover the user framed is shown whole, not re-cropped',
+        (tester) async {
+      await pumpIn(
+        tester,
+        const SizedBox(
+          width: 100,
+          height: 150,
+          child: BookCover(
+            title: 'A book',
+            coverImagePath: '/covers/framed.jpg',
+            width: 100,
+            height: 150,
+          ),
+        ),
+      );
+
+      final image = tester.widget<Image>(find.byType(Image));
+      expect(
+        image.fit,
+        BoxFit.contain,
+        reason: 'filling the slot would crop what the user deliberately kept',
       );
     });
   });
