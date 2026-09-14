@@ -78,6 +78,27 @@ void main() {
       expect(book.isbn13, '9785961426625');
     });
 
+    test('the retail blurb is never taken as a description', () async {
+      // What the service actually returns: a shop listing, not a book.
+      const blurb = 'Henri Ford: Mening hayotimni ASAXIYda arzon narxda xarid '
+          'qiling⭐Aksiyalar⚡Kafolat✅Tavsif⏰Muddatli to\'lov⌛Toshkent va '
+          "O'zbekiston bo'ylab tezkor yetkazib berish 👉 asaxiy.uz";
+
+      final source = sourceThat(
+        (_) async => json({
+          'data': {..._bookJson, 'description': blurb, 'subtitle': blurb},
+        }, 200),
+      );
+
+      final book = await source.lookupByIsbn('9785961426625');
+
+      expect(book.description, isNull);
+      // Everything else still comes through.
+      expect(book.title, isNotEmpty);
+      expect(book.pageCount, 374);
+      expect(book.coverUrl, isNotNull);
+    });
+
     test('404 is "not found", not a network failure', () async {
       final source = sourceThat(
         (_) async => json({

@@ -234,7 +234,10 @@ class BookScraperSource implements BookMetadataRepository {
           data['title_latin']?.toString() ??
           'Untitled',
       authors: authors,
-      description: _description(data),
+      // Deliberately not mapped. The service scrapes retail listings, so its
+      // description and subtitle are shop copy — delivery terms, discounts and
+      // a link back to the store — not anything about the book. An empty
+      // description reads better than that, and stays editable.
       isbn13: isbn13,
       isbn10: data['isbn10']?.toString() ??
           (isbn13 == null ? null : Isbn.to10(isbn13)),
@@ -254,14 +257,6 @@ class BookScraperSource implements BookMetadataRepository {
       final value = node[key]?.toString().trim();
       if (value != null && value.isNotEmpty) return value;
     }
-    return null;
-  }
-
-  String? _description(Map<String, dynamic> data) {
-    final description = data['description']?.toString().trim();
-    final subtitle = data['subtitle']?.toString().trim();
-    if (description != null && description.isNotEmpty) return description;
-    if (subtitle != null && subtitle.isNotEmpty) return subtitle;
     return null;
   }
 
