@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_library/app.dart';
 import 'package:my_library/core/providers.dart';
+import 'package:my_library/core/widgets/book_cover.dart';
 import 'package:my_library/core/widgets/bottom_nav.dart';
 import 'package:my_library/data/local/database.dart';
 import 'package:my_library/core/utils/formatting.dart';
@@ -132,6 +133,46 @@ void main() {
     // Atomic Habits is seeded as in progress, so the progress card is shown.
     expect(find.text('Update progress'), findsOneWidget);
     expect(find.text('237 of 320 pages'), findsOneWidget);
+
+    await teardownApp(tester);
+  });
+
+  testWidgets('the details hero is compact without crowding its controls',
+      (tester) async {
+    await start(tester);
+    await tester.tap(find.text('Atomic Habits').first);
+    await settle(tester);
+
+    final cover = tester.getRect(find.byType(BookCover).first);
+    final controls = tester.getRect(find.text('Edit'));
+
+    // The cover used to start 112px down; it now follows the controls.
+    expect(
+      cover.top,
+      lessThan(90),
+      reason: 'the hero should not start halfway down the screen',
+    );
+    expect(
+      cover.top,
+      greaterThan(controls.bottom),
+      reason: 'the controls must never sit on top of the cover',
+    );
+    expect(
+      cover.top - controls.bottom,
+      greaterThanOrEqualTo(12),
+      reason: 'and must not be crammed against it either',
+    );
+
+    // Compacting the hero must not have shrunk the artwork.
+    expect(cover.size, const Size(108, 162));
+
+    // The title still sits beside the cover, not under it. Matched by size:
+    // the cover placeholder draws the title inside itself as well, at 17.
+    final heroTitle = find.byWidgetPredicate(
+      (w) => w is Text && w.data == 'Atomic Habits' && (w.style?.fontSize ?? 0) > 20,
+    );
+    expect(heroTitle, findsOneWidget);
+    expect(tester.getRect(heroTitle).left, greaterThan(cover.right));
 
     await teardownApp(tester);
   });

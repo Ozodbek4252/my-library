@@ -225,6 +225,17 @@ class _Hero extends ConsumerWidget {
 
   final BookDetails details;
 
+  /// The floating back / Edit / ⋯ row, measured from the safe area.
+  static const _controlsTop = 12.0;
+  static const _controlsSize = 36.0;
+
+  /// Breathing room between that row and the cover. Derived rather than a
+  /// fixed top padding, so the hero is only ever as tall as it needs to be —
+  /// and stays correct on any status bar height, or if the controls change.
+  static const _gapBelowControls = 20.0;
+
+  static const _contentTop = _controlsTop + _controlsSize + _gapBelowControls;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final work = details.work;
@@ -250,7 +261,7 @@ class _Hero extends ConsumerWidget {
           ),
         ),
         Padding(
-          padding: EdgeInsets.fromLTRB(24, topInset + 112, 24, 22),
+          padding: EdgeInsets.fromLTRB(24, topInset + _contentTop, 24, 22),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -312,7 +323,7 @@ class _Hero extends ConsumerWidget {
           ),
         ),
         Positioned(
-          top: topInset + 12,
+          top: topInset + _controlsTop,
           left: 16,
           right: 16,
           child: Row(
