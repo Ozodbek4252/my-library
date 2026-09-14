@@ -160,13 +160,9 @@ class _MetricGrid extends StatelessWidget {
       ),
     ];
 
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: AppColors.ruleStrong,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.ruleStrong),
-      ),
+    return OutlinedSurface(
+      // The rule colour doubles as the 1px gaps between the four cells.
+      background: AppColors.ruleStrong,
       child: Column(
         children: [
           for (var row = 0; row < 2; row++) ...[

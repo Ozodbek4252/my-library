@@ -13,6 +13,7 @@ import '../../../../core/widgets/app_icons.dart';
 import '../../../../core/widgets/app_sheet.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/book_cover.dart';
+import '../../../../core/widgets/layout.dart';
 import '../../../../core/widgets/pills.dart';
 import '../../../../data/metadata/book_metadata.dart';
 import '../../../../data/repositories/collection_mutations.dart';
@@ -360,13 +361,7 @@ class _CopiesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: AppColors.paperRaised,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.ruleStrong),
-      ),
+    return OutlinedSurface(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -483,13 +478,9 @@ class _ScannedCopyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: AppColors.highlightWash,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.highlight, width: 1.5),
-      ),
+    return OutlinedSurface(
+      background: AppColors.highlightWash,
+      border: Border.all(color: AppColors.highlight, width: 1.5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

@@ -26,6 +26,47 @@ class SectionLabel extends StatelessWidget {
   }
 }
 
+/// A rounded surface whose outline stays unbroken.
+///
+/// A `Container` that both clips and carries a border clips its children to the
+/// *outer* edge of the radius, so a child painting its own background — a
+/// coloured card header, a highlighted row — covers the stroke at the corners
+/// and the outline appears to break. Clipping the content first and then
+/// painting the border over the top keeps one continuous rounded rectangle,
+/// whatever the children do.
+class OutlinedSurface extends StatelessWidget {
+  const OutlinedSurface({
+    super.key,
+    required this.child,
+    this.radius = AppRadius.card,
+    this.background = AppColors.paperRaised,
+    this.border,
+  });
+
+  final Widget child;
+  final double radius;
+  final Color background;
+  final BoxBorder? border;
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = BorderRadius.circular(radius);
+
+    return DecoratedBox(
+      // Drawn after the child, so nothing can paint over the outline.
+      position: DecorationPosition.foreground,
+      decoration: BoxDecoration(
+        borderRadius: shape,
+        border: border ?? Border.all(color: AppColors.ruleStrong),
+      ),
+      child: ClipRRect(
+        borderRadius: shape,
+        child: ColoredBox(color: background, child: child),
+      ),
+    );
+  }
+}
+
 /// The bordered paper card that holds rows of fields and settings.
 class PaperCard extends StatelessWidget {
   const PaperCard({
@@ -45,15 +86,17 @@ class PaperCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(radius),
-        border: border ?? Border.all(color: AppColors.ruleStrong),
+    return OutlinedSurface(
+      radius: radius,
+      background: background,
+      border: border,
+      child: Padding(
+        padding: padding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children,
+        ),
       ),
-      padding: padding,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
     );
   }
 }

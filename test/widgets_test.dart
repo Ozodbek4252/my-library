@@ -85,4 +85,58 @@ void main() {
       );
     });
   });
+
+  group('OutlinedSurface', () {
+    testWidgets('paints its outline after the child, so nothing covers it',
+        (tester) async {
+      await pumpIn(
+        tester,
+        const SizedBox(
+          width: 200,
+          child: OutlinedSurface(
+            // A header that paints its own background, as both scan-result
+            // cards have: this is what used to eat the top two corners.
+            child: ColoredBox(
+              color: Color(0xFFF1EADC),
+              child: SizedBox(height: 40, width: double.infinity),
+            ),
+          ),
+        ),
+      );
+
+      final decorated = tester
+          .widgetList<DecoratedBox>(find.byType(DecoratedBox))
+          .firstWhere((d) => d.decoration is BoxDecoration
+              ? (d.decoration as BoxDecoration).border != null
+              : false);
+
+      expect(
+        decorated.position,
+        DecorationPosition.foreground,
+        reason: 'a background border would be painted over by the header',
+      );
+
+      // The child is clipped to the same radius, so it cannot square off the
+      // corners either.
+      final clip = tester.widget<ClipRRect>(find.byType(ClipRRect).first);
+      final border = (decorated.decoration as BoxDecoration).borderRadius;
+      expect(clip.borderRadius, border);
+    });
+
+    testWidgets('keeps the size it is given', (tester) async {
+      await pumpIn(
+        tester,
+        const SizedBox(
+          width: 200,
+          height: 80,
+          child: OutlinedSurface(child: SizedBox.expand()),
+        ),
+      );
+      expect(
+        tester.getSize(find.byType(OutlinedSurface)),
+        const Size(200, 80),
+        reason: 'the fix must not change any dimensions',
+      );
+    });
+  });
 }

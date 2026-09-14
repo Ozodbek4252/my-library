@@ -871,16 +871,13 @@ class _PhotoTile extends StatelessWidget {
     final file = File(photo.path);
     return GestureDetector(
       onLongPress: onRemove,
-      child: Container(
+      child: SizedBox(
         width: 66,
         height: 66,
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          color: AppColors.paperChip,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.ruleStrong),
-        ),
-        child: Stack(
+        child: OutlinedSurface(
+          radius: 10,
+          background: AppColors.paperChip,
+          child: Stack(
           fit: StackFit.expand,
           children: [
             Image.file(
@@ -915,6 +912,7 @@ class _PhotoTile extends StatelessWidget {
               ),
             ),
           ],
+          ),
         ),
       ),
     );
