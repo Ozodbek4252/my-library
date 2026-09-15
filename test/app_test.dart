@@ -207,6 +207,41 @@ void main() {
     await teardownApp(tester);
   });
 
+  testWidgets('the fine buttons either side move one page at a time',
+      (tester) async {
+    await start(tester);
+
+    await tester.tap(navItem('Reading'));
+    await settle(tester);
+    await tester.tap(find.text('Update page').first);
+    await settle(tester);
+
+    final start_ = await (db.select(db.works)
+          ..where((w) => w.title.equals('Atomic Habits')))
+        .getSingle();
+
+    // Three up and one down is a net of two — and only if each press is one
+    // page. The wide "+10 pages" button between them is the coarse jump.
+    await tester.tap(find.text('+'));
+    await tester.pump();
+    await tester.tap(find.text('+'));
+    await tester.pump();
+    await tester.tap(find.text('+'));
+    await tester.pump();
+    await tester.tap(find.text('\u2212'));
+    await tester.pump();
+
+    await tester.tap(find.text('Save progress'));
+    await settle(tester);
+
+    final work = await (db.select(db.works)
+          ..where((w) => w.title.equals('Atomic Habits')))
+        .getSingle();
+    expect(work.currentPage, start_.currentPage + 2);
+
+    await teardownApp(tester);
+  });
+
   testWidgets('statistics are calculated, not hardcoded', (tester) async {
     await start(tester);
 

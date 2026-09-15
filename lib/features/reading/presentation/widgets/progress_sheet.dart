@@ -172,7 +172,9 @@ class _ProgressSheetState extends ConsumerState<_ProgressSheet> {
           const SizedBox(height: 20),
           Row(
             children: [
-              _StepButton(label: '−', onTap: () => _step(-10), width: 56),
+              // The wide button in the middle is the coarse jump; these two
+              // are the fine adjustment, so they move a single page each way.
+              _StepButton(label: '−', onTap: () => _step(-1), width: 56),
               const SizedBox(width: 9),
               Expanded(
                 child: _StepButton(
@@ -181,7 +183,7 @@ class _ProgressSheetState extends ConsumerState<_ProgressSheet> {
                 ),
               ),
               const SizedBox(width: 9),
-              _StepButton(label: '+', onTap: () => _step(25), width: 56),
+              _StepButton(label: '+', onTap: () => _step(1), width: 56),
             ],
           ),
           const SizedBox(height: 10),
