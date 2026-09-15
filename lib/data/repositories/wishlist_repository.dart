@@ -147,9 +147,11 @@ class WishlistRepository {
     String? desiredEdition,
     Priority priority = Priority.medium,
     String? notes,
+    DateTime? at,
   }) async {
     return _db.transaction(() async {
-      final now = DateTime.now();
+      // Seeded sample entries are backdated; everything else is wished for now.
+      final now = at ?? DateTime.now();
       var workId = draft.workId;
 
       if (workId == null) {

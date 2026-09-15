@@ -5,6 +5,7 @@ import '../../domain/models/enums.dart';
 import '../local/database.dart';
 import '../metadata/local_catalog.dart';
 import '../repositories/collection_mutations.dart';
+import '../repositories/wishlist_repository.dart';
 import 'seed_data.dart';
 
 /// Fills an empty database with a realistic sample library so the app can be
@@ -111,43 +112,23 @@ class Seeder {
         }
       }
 
+      // Through the repository, so a sample wishlist entry has exactly the
+      // shape one the user adds does — a work and the edition they want. Doing
+      // the inserts by hand here left works with no edition at all.
+      final wishlist = WishlistRepository(_db);
       for (final wish in seedWishes) {
         final metadata = localCatalog[wish.catalogKey];
         if (metadata == null) continue;
 
-        final draft = metadata.toDraft();
-        final workId = newId();
-        final added = now.subtract(Duration(days: wish.addedDaysAgo));
-
-        await _db.into(_db.works).insert(
-              WorksCompanion.insert(
-                id: workId,
-                title: draft.title,
-                authors: draft.authors,
-                genres: draft.genres,
-                originalTitle: Value(draft.originalTitle),
-                originalLanguage: Value(draft.originalLanguage),
-                description: Value(draft.description),
-                seriesName: Value(draft.seriesName),
-                seriesIndex: Value(draft.seriesIndex),
-                firstPublished: Value(draft.firstPublished),
-                createdAt: added,
-                updatedAt: added,
-              ),
-            );
-
-        await _db.into(_db.wishlistItems).insert(
-              WishlistItemsCompanion.insert(
-                id: newId(),
-                workId: workId,
-                desiredLanguage: Value(wish.desiredLanguage),
-                desiredFormat: Value(wish.desiredFormat),
-                desiredEdition: Value(wish.desiredEdition),
-                priority: Value(wish.priority.name),
-                notes: Value(wish.notes),
-                dateAdded: added,
-              ),
-            );
+        await wishlist.add(
+          draft: metadata.toDraft(),
+          desiredLanguage: wish.desiredLanguage,
+          desiredFormat: wish.desiredFormat,
+          desiredEdition: wish.desiredEdition,
+          priority: wish.priority,
+          notes: wish.notes,
+          at: now.subtract(Duration(days: wish.addedDaysAgo)),
+        );
       }
     });
 

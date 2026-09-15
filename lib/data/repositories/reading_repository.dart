@@ -40,6 +40,9 @@ class ReadingRepository {
   }
 
   /// Unread books already on the shelves — the "Up next" strip.
+  ///
+  /// Ownership is part of the question, not just reading status: a wishlisted
+  /// book is unread too, and the strip says "from your shelves".
   Stream<List<LibraryEntry>> watchUpNext({int limit = 8}) {
     final query = _db.select(_db.works).join([
       leftOuterJoin(
@@ -47,7 +50,9 @@ class ReadingRepository {
         _db.editions.id.equalsExp(_db.works.primaryEditionId),
       ),
     ])
-      ..where(_db.works.readingStatus.equals(ReadingStatus.unread.name))
+      ..where(
+        _db.works.readingStatus.equals(ReadingStatus.unread.name) & _owned(),
+      )
       ..orderBy([OrderingTerm.desc(_db.works.createdAt)])
       ..limit(limit);
 
@@ -64,6 +69,24 @@ class ReadingRepository {
           ],
         );
   }
+
+  /// EXISTS an owned copy of this work. A work with only wishlisted or
+  /// previously-owned copies — or no copies at all — is not on the shelves.
+  Expression<bool> _owned() => existsQuery(
+        _db.selectOnly(_db.copies)
+          ..addColumns([_db.copies.id])
+          ..join([
+            innerJoin(
+              _db.editions,
+              _db.editions.id.equalsExp(_db.copies.editionId),
+              useColumns: false,
+            ),
+          ])
+          ..where(
+            _db.editions.workId.equalsExp(_db.works.id) &
+                _db.copies.ownership.equals(Ownership.owned.name),
+          ),
+      );
 
   Stream<List<HistoryEntry>> watchHistory({int limit = 200}) {
     final query = _db.select(_db.readingEntries).join([

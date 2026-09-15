@@ -719,7 +719,11 @@ class _EditionsRow extends StatelessWidget {
               height: 29,
               child: Stack(
                 children: [
-                  for (var i = 0; i < (count.clamp(1, 2)); i++)
+                  // Draw only spines that exist. A work can legitimately
+                  // have no edition — one that was wishlisted, or whose
+                  // editions were all removed — and clamping up to 1 here
+                  // used to index an empty list and take the screen down.
+                  for (var i = 0; i < count.clamp(0, 2); i++)
                     Positioned(
                       left: i * 13,
                       child: Container(
