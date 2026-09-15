@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 import '../../core/utils/isbn.dart';
 import 'book_metadata.dart';
@@ -134,6 +136,7 @@ class BookScraperSource implements BookMetadataRepository {
     int? pages,
     String? language,
     String? description,
+    String? coverImagePath,
   }) async {
     if (!isConfigured) {
       throw const MetadataException(MetadataFailure.network, 'No base URL');
@@ -155,14 +158,17 @@ class BookScraperSource implements BookMetadataRepository {
 
     };
 
+    // A cover the reader photographed is a file, not a URL, so a book that
+    // has one is sent as multipart. Without one the request stays JSON.
+    final cover = coverImagePath == null || coverImagePath.isEmpty
+        ? null
+        : File(coverImagePath);
+
     final http.Response response;
     try {
-      response = await _client
-          .post(
-            _uri('/books/suggestions'),
-            headers: _headers,
-            body: jsonEncode(payload),
-          )
+      response = await (cover != null && cover.existsSync()
+              ? _postMultipart(payload, cover)
+              : _postJson(payload))
           .timeout(timeout);
     } on TimeoutException {
       throw const MetadataException(MetadataFailure.network, 'Timed out');
@@ -194,6 +200,61 @@ class BookScraperSource implements BookMetadataRepository {
       MetadataFailure.network,
       'HTTP ${response.statusCode}',
     );
+  }
+
+  Future<http.Response> _postJson(Map<String, dynamic> payload) => _client.post(
+        _uri('/books/suggestions'),
+        headers: _headers,
+        body: jsonEncode(payload),
+      );
+
+  /// The same fields, plus the photograph. Multipart carries no types, so
+  /// numbers and lists are spelled the way the service's validator reads
+  /// them: `pages=336`, `authors[0]=…`.
+  Future<http.Response> _postMultipart(
+    Map<String, dynamic> payload,
+    File cover,
+  ) async {
+    final request = http.MultipartRequest('POST', _uri('/books/suggestions'))
+      ..headers.addAll({
+        'Accept': 'application/json',
+        if (token != null && token!.isNotEmpty)
+          'Authorization': 'Bearer $token',
+      });
+
+    payload.forEach((key, value) {
+      if (value is List) {
+        for (var i = 0; i < value.length; i++) {
+          request.fields['$key[$i]'] = '${value[i]}';
+        }
+      } else {
+        request.fields[key] = '$value';
+      }
+    });
+
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'cover',
+        cover.path,
+        contentType: _mediaTypeOf(cover.path),
+      ),
+    );
+
+    // Through the configured client, never request.send(): that would spin up
+    // a fresh one and lose everything this source was built with.
+    return http.Response.fromStream(await _client.send(request));
+  }
+
+  /// The service accepts jpeg, png and webp. A cover with no recognisable
+  /// extension is sent as jpeg, which is what the camera and the cropper
+  /// produce.
+  static MediaType _mediaTypeOf(String path) {
+    final extension = path.toLowerCase().split('.').last;
+    return switch (extension) {
+      'png' => MediaType('image', 'png'),
+      'webp' => MediaType('image', 'webp'),
+      _ => MediaType('image', 'jpeg'),
+    };
   }
 
   Future<http.Response> _get(Uri uri) async {

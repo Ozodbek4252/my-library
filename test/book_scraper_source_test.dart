@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -266,6 +267,139 @@ void main() {
       await source.suggest(title: 'Bare minimum');
 
       expect(body.keys, ['title']);
+    });
+  });
+
+  group('suggest with a cover', () {
+    late Directory temp;
+
+    setUp(() => temp = Directory.systemTemp.createTempSync('covers'));
+    tearDown(() => temp.deleteSync(recursive: true));
+
+    /// A real file on disk, because that is what the app has: the cropper
+    /// writes one and the draft holds its path.
+    File coverFile(String name, {List<int>? bytes}) {
+      final file = File('${temp.path}/$name')
+        ..writeAsBytesSync(bytes ?? List<int>.filled(64, 7));
+      return file;
+    }
+
+    test('the photographed cover is sent as a file, with the fields',
+        () async {
+      late http.BaseRequest sent;
+      late List<int> bodyBytes;
+      final source = sourceThat((request) async {
+        sent = request;
+        bodyBytes = request.bodyBytes;
+        return json({'message': 'Queued'}, 202);
+      });
+
+      await source.suggest(
+        title: 'Lol',
+        isbn: '978-9943-01-234-5',
+        authors: ['Fotih Duman'],
+        pages: 208,
+        coverImagePath: coverFile('lol.jpg').path,
+      );
+
+      expect(
+        sent.headers['content-type'],
+        startsWith('multipart/form-data'),
+        reason: 'a file cannot travel inside a JSON body',
+      );
+
+      final body = utf8.decode(bodyBytes, allowMalformed: true);
+      expect(body, contains('name="cover"'));
+      expect(body, contains('filename="lol.jpg"'));
+      expect(body, contains('image/jpeg'));
+
+      // The text fields still have to arrive, spelled the way the service's
+      // validator reads them.
+      expect(body, contains('name="title"'));
+      expect(body, contains('Lol'));
+      expect(body, contains('name="isbn"'));
+      expect(body, contains('9789943012345'));
+      expect(body, contains('name="authors[0]"'));
+      expect(body, contains('Fotih Duman'));
+      expect(body, contains('name="pages"'));
+      expect(body, contains('208'));
+    });
+
+    test('the media type follows the file, so png is not sent as jpeg',
+        () async {
+      late List<int> bodyBytes;
+      final source = sourceThat((request) async {
+        bodyBytes = request.bodyBytes;
+        return json({'message': 'Queued'}, 202);
+      });
+
+      await source.suggest(
+        title: 'Lol',
+        coverImagePath: coverFile('lol.png').path,
+      );
+
+      final body = utf8.decode(bodyBytes, allowMalformed: true);
+      expect(body, contains('image/png'));
+      expect(body, isNot(contains('image/jpeg')));
+    });
+
+    test('a book with no cover is still sent as plain JSON', () async {
+      late http.BaseRequest sent;
+      late String body;
+      final source = sourceThat((request) async {
+        sent = request;
+        body = request.body;
+        return json({'message': 'Queued'}, 202);
+      });
+
+      await source.suggest(title: 'Lol', pages: 208);
+
+      expect(sent.headers['content-type'], contains('application/json'));
+      expect(jsonDecode(body), containsPair('title', 'Lol'));
+    });
+
+    test('a cover whose file has gone falls back to JSON rather than failing',
+        () async {
+      late http.BaseRequest sent;
+      final source = sourceThat((request) async {
+        sent = request;
+        return json({'message': 'Queued'}, 202);
+      });
+
+      // The record can outlive the file — storage cleared, or the user
+      // removed it. The book itself is still worth sending.
+      final message = await source.suggest(
+        title: 'Lol',
+        coverImagePath: '${temp.path}/never-written.jpg',
+      );
+
+      expect(sent.headers['content-type'], contains('application/json'));
+      expect(message, 'Queued');
+    });
+
+    test('a rejected cover carries the service message back', () async {
+      final source = sourceThat(
+        (_) async => json({
+          'message': 'The given data was invalid.',
+          'errors': {
+            'cover': ['The cover field must not be greater than 5120 kilobytes.'],
+          },
+        }, 422),
+      );
+
+      expect(
+        () => source.suggest(
+          title: 'Lol',
+          coverImagePath: coverFile('huge.jpg').path,
+        ),
+        throwsA(
+          isA<MetadataException>().having(
+            (e) => e.message,
+            'message',
+            contains('5120 kilobytes'),
+          ),
+        ),
+      );
     });
   });
 

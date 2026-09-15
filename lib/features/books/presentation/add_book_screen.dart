@@ -431,6 +431,9 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
         pages: _draft.pageCount,
         language: _draft.language,
         description: _draft.description,
+        // The whole reason this book is unknown is that nobody has a cover
+        // for it either. The one the reader photographed goes with it.
+        coverImagePath: _draft.coverImagePath,
       );
       if (context.mounted) AppToast.show(context, message);
     } on MetadataException catch (e) {
