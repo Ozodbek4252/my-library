@@ -538,7 +538,7 @@ class _ScannerChrome extends StatelessWidget {
                   ],
                   Expanded(
                     child: ScannerButton(
-                      label: context.l10n.scannerTypeTheNumber,
+                      label: context.l10n.scannerEnterIsbn,
                       onTap: onManual,
                     ),
                   ),
@@ -814,7 +814,9 @@ class _ManualIsbnSheetState extends State<_ManualIsbnSheet> {
             if (!widget.captureOnly) ...[
               const SizedBox(height: 9),
               SecondaryButton(
-                label: context.l10n.isbnSheetAddWithout,
+                // Not "without an ISBN": the editor takes one too. What this
+                // really offers is typing the book in yourself.
+                label: context.l10n.scannerAddByHand,
                 height: 50,
                 fontSize: 15,
                 onPressed: () {

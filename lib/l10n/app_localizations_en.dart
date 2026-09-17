@@ -392,7 +392,7 @@ class AppL10nEn extends AppL10n {
   String get scannerEnterManually => 'Enter manually';
 
   @override
-  String get scannerTypeTheNumber => 'Type the number';
+  String get scannerEnterIsbn => 'Enter ISBN';
 
   @override
   String get scannerLookingUp => 'Looking it up…';
@@ -445,9 +445,6 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get isbnSheetUseNumber => 'Use this number';
-
-  @override
-  String get isbnSheetAddWithout => 'Add without an ISBN';
 
   @override
   String get isbnSheetEmpty => 'Enter the number printed under the barcode.';

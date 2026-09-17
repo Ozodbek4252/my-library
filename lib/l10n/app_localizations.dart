@@ -765,11 +765,11 @@ abstract class AppL10n {
   /// **'Enter manually'**
   String get scannerEnterManually;
 
-  /// No description provided for @scannerTypeTheNumber.
+  /// No description provided for @scannerEnterIsbn.
   ///
   /// In en, this message translates to:
-  /// **'Type the number'**
-  String get scannerTypeTheNumber;
+  /// **'Enter ISBN'**
+  String get scannerEnterIsbn;
 
   /// No description provided for @scannerLookingUp.
   ///
@@ -866,12 +866,6 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Use this number'**
   String get isbnSheetUseNumber;
-
-  /// No description provided for @isbnSheetAddWithout.
-  ///
-  /// In en, this message translates to:
-  /// **'Add without an ISBN'**
-  String get isbnSheetAddWithout;
 
   /// No description provided for @isbnSheetEmpty.
   ///

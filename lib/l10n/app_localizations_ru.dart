@@ -402,7 +402,7 @@ class AppL10nRu extends AppL10n {
   String get scannerEnterManually => 'Ввести вручную';
 
   @override
-  String get scannerTypeTheNumber => 'Набрать номер';
+  String get scannerEnterIsbn => 'Ввести ISBN';
 
   @override
   String get scannerLookingUp => 'Ищем…';
@@ -455,9 +455,6 @@ class AppL10nRu extends AppL10n {
 
   @override
   String get isbnSheetUseNumber => 'Использовать этот номер';
-
-  @override
-  String get isbnSheetAddWithout => 'Добавить без ISBN';
 
   @override
   String get isbnSheetEmpty => 'Введите номер, напечатанный под штрихкодом.';

@@ -392,7 +392,7 @@ class AppL10nUz extends AppL10n {
   String get scannerEnterManually => 'Qoʻlda kiritish';
 
   @override
-  String get scannerTypeTheNumber => 'Raqamni yozing';
+  String get scannerEnterIsbn => 'ISBNni kiriting';
 
   @override
   String get scannerLookingUp => 'Qidirilmoqda…';
@@ -444,9 +444,6 @@ class AppL10nUz extends AppL10n {
 
   @override
   String get isbnSheetUseNumber => 'Shu raqamni ishlatish';
-
-  @override
-  String get isbnSheetAddWithout => 'ISBN siz qoʻshish';
 
   @override
   String get isbnSheetEmpty => 'Shtrix-kod ostidagi raqamni kiriting.';
