@@ -89,11 +89,29 @@ class StatisticsRepository {
     final statusRows = await _db.select(_db.works).get();
     var reading = 0;
     var unread = 0;
+
+    // Pages read in books that are still open. Someone 95 pages into a book
+    // has read 95 pages, whether or not they ever finish it — and the screen
+    // says "pages read", not "pages in finished books".
+    //
+    // Only books still in progress are added: a finished one is already
+    // counted through its entry above, so counting its current page again
+    // would double it.
+    var pagesInProgress = 0;
+
     for (final work in statusRows) {
       switch (ReadingStatus.fromName(work.readingStatus)) {
         case ReadingStatus.reading:
         case ReadingStatus.rereading:
           reading++;
+          // Attributed to the year the reading started, so a book carried over
+          // from last year does not land all its pages in this one.
+          final started = work.startDate;
+          if (started != null &&
+              !started.isBefore(start) &&
+              started.isBefore(end)) {
+            pagesInProgress += work.currentPage;
+          }
         case ReadingStatus.unread:
           unread++;
         default:
@@ -106,7 +124,7 @@ class StatisticsRepository {
       rangeStart: start,
       rangeEnd: targetYear == now.year ? now : DateTime(targetYear, 12, 31),
       booksReadThisYear: entryRows.length,
-      pagesReadThisYear: pagesTotal,
+      pagesReadThisYear: pagesTotal + pagesInProgress,
       currentlyReading: reading,
       unreadCount: unread,
       averageRating: ratingCount == 0 ? null : ratingSum / ratingCount,
