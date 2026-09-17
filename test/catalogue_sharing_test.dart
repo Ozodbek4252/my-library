@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,25 +16,27 @@ import 'package:my_library/domain/models/book_draft.dart';
 import 'package:my_library/features/books/presentation/add_book_screen.dart';
 import 'package:my_library/l10n/app_localizations.dart';
 
-/// Which saves reach the shared catalogue, and which stay on the device.
+/// A book's first appearance goes to the shared catalogue. Nothing after that
+/// does: later edits and reading progress are the reader's own records.
 void main() {
   late AppDatabase db;
   late List<http.BaseRequest> sent;
+
+  /// What the service answers. Tests that care set this before pumping.
+  late http.Response reply;
 
   setUp(() async {
     db = AppDatabase(NativeDatabase.memory());
     await db.ensureIndexes();
     sent = [];
+    reply = http.Response(
+      '{"message":"Queued"}',
+      202,
+      headers: {'content-type': 'application/json'},
+    );
   });
 
   tearDown(() => db.close());
-
-  /// What the service answers. Tests that care set this before pumping.
-  var reply = http.Response(
-    '{"message":"Queued"}',
-    202,
-    headers: {'content-type': 'application/json'},
-  );
 
   BookScraperSource recordingSource() => BookScraperSource(
         baseUrl: 'https://example.test/api/v1',
@@ -60,10 +61,7 @@ void main() {
           path: '/',
           builder: (_, _) => const Scaffold(body: Text('shelf')),
         ),
-        GoRoute(
-          path: '/edit',
-          builder: (_, _) => AddBookScreen(draft: args),
-        ),
+        GoRoute(path: '/edit', builder: (_, _) => AddBookScreen(draft: args)),
       ],
     );
     addTearDown(router.dispose);
@@ -81,6 +79,7 @@ void main() {
         ),
       ),
     );
+
     router.push('/edit');
     for (var i = 0; i < 8; i++) {
       await tester.pump(const Duration(milliseconds: 120));
@@ -89,180 +88,200 @@ void main() {
 
   Future<void> save(WidgetTester tester) async {
     final l10n = await AppL10n.delegate.load(const Locale('en'));
-    // The top bar's Save is always on screen; the big button at the foot of
-    // the form is below the fold.
+    // The top bar's Save is always on screen; the button at the foot of the
+    // form is below the fold.
     await tester.tap(find.text(l10n.actionSave).hitTestable().first);
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 120));
     }
-    // Let any toast expire before the tree goes.
+  }
+
+  Future<void> teardown(WidgetTester tester) async {
+    // A toast lives for 2.4s; let any showing one expire before the tree goes.
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 50));
   }
 
-  testWidgets('editing a book sends the correction to the catalogue',
-      (tester) async {
-    final added = await db.addBook(
-      BookDraft(
-        title: 'Lol',
-        authors: ['Fotih Duman'],
-        isbn13: '9780141036144',
-        pageCount: 208,
-      ),
-    );
+  Map<String, dynamic> bodyOf(http.BaseRequest request) =>
+      jsonDecode((request as http.Request).body) as Map<String, dynamic>;
 
-    await pumpEditor(tester, AddBookArgs(workId: added.workId));
-    await save(tester);
+  group('creating a book', () {
+    testWidgets('sends it to the catalogue', (tester) async {
+      await pumpEditor(
+        tester,
+        AddBookArgs(
+          prefill: BookDraft(
+            title: 'Lol',
+            authors: ['Fotih Duman'],
+            isbn13: '9780141036144',
+            pageCount: 208,
+          ),
+        ),
+      );
+      await save(tester);
 
-    expect(sent, hasLength(1), reason: 'an edit should reach the catalogue');
-    expect(sent.single.url.path, '/api/v1/books/suggestions');
+      expect(sent, hasLength(1));
+      expect(sent.single.url.path, '/api/v1/books/suggestions');
+      final body = bodyOf(sent.single);
+      expect(body['title'], 'Lol');
+      expect(body['isbn'], '9780141036144');
+      expect(body['authors'], ['Fotih Duman']);
+
+      await teardown(tester);
+    });
+
+    testWidgets('one typed in by hand goes too', (tester) async {
+      await pumpEditor(tester, const AddBookArgs());
+
+      await tester.enterText(find.byType(TextField).first, 'Typed By Hand');
+      await tester.pump();
+      await save(tester);
+
+      expect(sent, hasLength(1));
+      expect(bodyOf(sent.single)['title'], 'Typed By Hand');
+
+      await teardown(tester);
+    });
+
+    testWidgets('one with no ISBN is sent anyway, for a human to sort out',
+        (tester) async {
+      await pumpEditor(
+        tester,
+        AddBookArgs(
+          prefill: BookDraft(title: 'No Barcode Anywhere', authors: ['A N O']),
+        ),
+      );
+      await save(tester);
+
+      expect(sent, hasLength(1));
+      expect(
+        bodyOf(sent.single).containsKey('isbn'),
+        isFalse,
+        reason: 'there is none to send; the catalogue merges on a fingerprint',
+      );
+
+      await teardown(tester);
+    });
+
+    testWidgets('an ISBN that fails its check digit is dropped, not sent',
+        (tester) async {
+      await pumpEditor(
+        tester,
+        AddBookArgs(
+          prefill: BookDraft(
+            title: 'Mis-typed',
+            authors: ['A N O'],
+            isbn13: '9789943012345',
+          ),
+        ),
+      );
+      await save(tester);
+
+      expect(sent, hasLength(1), reason: 'the book itself still goes');
+      expect(
+        bodyOf(sent.single).containsKey('isbn'),
+        isFalse,
+        reason: 'sending it would have the service refuse the whole book',
+      );
+
+      await teardown(tester);
+    });
+
+    testWidgets('the reader is told nothing about it', (tester) async {
+      await pumpEditor(
+        tester,
+        AddBookArgs(
+          prefill: BookDraft(title: 'Lol', isbn13: '9780141036144'),
+        ),
+      );
+      await save(tester);
+
+      final l10n = await AppL10n.delegate.load(const Locale('en'));
+      expect(sent, hasLength(1));
+      expect(find.text(l10n.toastAddedToLibrary), findsOneWidget);
+      expect(find.text('Queued'), findsNothing);
+
+      await teardown(tester);
+    });
+
+    testWidgets('a service that refuses the book says nothing either',
+        (tester) async {
+      reply = http.Response(
+        '{"message":"The given data was invalid.","errors":{"title":["bad"]}}',
+        422,
+        headers: {'content-type': 'application/json'},
+      );
+
+      await pumpEditor(
+        tester,
+        AddBookArgs(
+          prefill: BookDraft(title: 'Lol', isbn13: '9780141036144'),
+        ),
+      );
+      await save(tester);
+
+      // The book is saved on the device; a service the reader never chose to
+      // talk to must not interrupt them about it.
+      expect(sent, hasLength(1));
+      expect(find.textContaining('invalid'), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      await teardown(tester);
+    });
   });
 
-  testWidgets('saving an edit says nothing about the catalogue',
-      (tester) async {
-    final added = await db.addBook(
-      BookDraft(
-        title: 'Lol',
-        authors: ['Fotih Duman'],
-        isbn13: '9780141036144',
-      ),
-    );
+  group('everything after that stays on the device', () {
+    testWidgets('editing a book is not sent', (tester) async {
+      final added = await db.addBook(
+        BookDraft(
+          title: 'Lol',
+          authors: ['Fotih Duman'],
+          isbn13: '9780141036144',
+        ),
+      );
 
-    await pumpEditor(tester, AddBookArgs(workId: added.workId));
+      await pumpEditor(tester, AddBookArgs(workId: added.workId));
+      await save(tester);
 
-    final l10n = await AppL10n.delegate.load(const Locale('en'));
-    await tester.tap(find.text(l10n.actionSave).hitTestable().first);
-    for (var i = 0; i < 10; i++) {
-      await tester.pump(const Duration(milliseconds: 120));
-    }
+      expect(
+        sent,
+        isEmpty,
+        reason: 'a book makes one trip out, when it is first created',
+      );
 
-    // The user asked to save, not to publish. "Queued for review" after
-    // changing a page count would only puzzle.
-    expect(find.text(l10n.toastChangesSaved), findsOneWidget);
-    expect(find.text('Queued'), findsNothing);
+      await teardown(tester);
+    });
 
-    await tester.pump(const Duration(seconds: 3));
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(milliseconds: 50));
-  });
+    testWidgets('adding a cover by editing is not sent either', (tester) async {
+      final added = await db.addBook(
+        BookDraft(title: 'Lol', isbn13: '9780141036144'),
+      );
 
-  testWidgets('a service that refuses the book says nothing either',
-      (tester) async {
-    reply = http.Response(
-      '{"message":"The given data was invalid.","errors":{"title":["too short"]}}',
-      422,
-      headers: {'content-type': 'application/json'},
-    );
+      await pumpEditor(tester, AddBookArgs(workId: added.workId));
+      await save(tester);
 
-    final added = await db.addBook(
-      BookDraft(
-        title: 'Lol',
-        authors: ['Fotih Duman'],
-        isbn13: '9780141036144',
-      ),
-    );
+      expect(sent, isEmpty);
 
-    await pumpEditor(tester, AddBookArgs(workId: added.workId));
+      await teardown(tester);
+    });
 
-    final l10n = await AppL10n.delegate.load(const Locale('en'));
-    await tester.tap(find.text(l10n.actionSave).hitTestable().first);
-    for (var i = 0; i < 10; i++) {
-      await tester.pump(const Duration(milliseconds: 120));
-    }
+    testWidgets('reading progress is never sent', (tester) async {
+      final added = await db.addBook(
+        BookDraft(
+          title: 'Being Read',
+          isbn13: '9780141036144',
+          pageCount: 300,
+        ),
+      );
 
-    // The book is saved on the device; a service the reader never chose to
-    // talk to must not interrupt them about it.
-    expect(sent, hasLength(1));
-    expect(find.text(l10n.toastChangesSaved), findsOneWidget);
-    expect(find.textContaining('invalid'), findsNothing);
-    expect(tester.takeException(), isNull);
+      // How far someone has got is their own business, not the catalogue's.
+      final reading = ReadingRepository(db);
+      await reading.updateProgress(added.workId, 95);
+      await reading.setRating(added.workId, 4);
+      await reading.finishReading(added.workId);
 
-    await tester.pump(const Duration(seconds: 3));
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(milliseconds: 50));
-  });
-
-  testWidgets('a book with no ISBN is sent anyway, for a human to sort out',
-      (tester) async {
-    final added = await db.addBook(
-      BookDraft(title: 'No Barcode Anywhere', authors: ['A N Other']),
-    );
-
-    await pumpEditor(tester, AddBookArgs(workId: added.workId));
-    await save(tester);
-
-    expect(sent, hasLength(1));
-    final body = jsonDecode((sent.single as http.Request).body)
-        as Map<String, dynamic>;
-    expect(body['title'], 'No Barcode Anywhere');
-    expect(
-      body.containsKey('isbn'),
-      isFalse,
-      reason: 'there is none to send; the catalogue merges on a fingerprint',
-    );
-  });
-
-  testWidgets('an ISBN that fails its check digit is dropped, not sent',
-      (tester) async {
-    final added = await db.addBook(
-      BookDraft(title: 'Mis-typed', authors: ['A N Other']),
-    );
-    // Straight into the row, bypassing the draft's own validation.
-    await (db.update(db.editions)..where((e) => e.workId.equals(added.workId)))
-        .write(const EditionsCompanion(isbn13: Value('9789943012345')));
-
-    await pumpEditor(tester, AddBookArgs(workId: added.workId));
-    await save(tester);
-
-    expect(sent, hasLength(1), reason: 'the book still goes');
-    final body = jsonDecode((sent.single as http.Request).body)
-        as Map<String, dynamic>;
-    expect(
-      body.containsKey('isbn'),
-      isFalse,
-      reason: 'sending it would have the service refuse the whole book',
-    );
-  });
-
-  testWidgets('a manually added book is sent too', (tester) async {
-    await pumpEditor(tester, const AddBookArgs());
-
-    await tester.enterText(find.byType(TextField).first, 'Typed By Hand');
-    await tester.pump();
-
-    final l10n = await AppL10n.delegate.load(const Locale('en'));
-    await tester.tap(find.text(l10n.actionSave).hitTestable().first);
-    for (var i = 0; i < 10; i++) {
-      await tester.pump(const Duration(milliseconds: 120));
-    }
-
-    expect(sent, hasLength(1));
-    final body = jsonDecode((sent.single as http.Request).body)
-        as Map<String, dynamic>;
-    expect(body['title'], 'Typed By Hand');
-
-    await tester.pump(const Duration(seconds: 3));
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(milliseconds: 50));
-  });
-
-  testWidgets('updating reading progress is never sent', (tester) async {
-    final added = await db.addBook(
-      BookDraft(
-        title: 'Being Read',
-        authors: ['A N Other'],
-        isbn13: '9780141036144',
-        pageCount: 300,
-      ),
-    );
-
-    // How far someone has got is their own business, not the catalogue's.
-    final reading = ReadingRepository(db);
-    await reading.updateProgress(added.workId, 95);
-    await reading.setRating(added.workId, 4);
-    await reading.finishReading(added.workId);
-
-    expect(sent, isEmpty);
+      expect(sent, isEmpty);
+    });
   });
 }

@@ -235,11 +235,9 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
         await db.saveDraft(_draft);
         if (!mounted) return;
         AppToast.show(context, l10n.toastChangesSaved);
-        // Corrections are worth having: the cover this edit added, the page
-        // count it fixed. Started before the pop so `ref` is still live.
-        final shared = _shareWithCatalogue();
+        // Edits stay on the device. Only a book's first appearance goes to
+        // the catalogue; after that these records are the reader's own.
         context.pop();
-        unawaited(shared);
         return;
       }
 
@@ -402,9 +400,9 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
 
   /// Sends the book to the shared catalogue, in the background and in silence.
   ///
-  /// Every save of a book record gets here — a new one, or an edit that added
-  /// a cover or fixed a page count. Reading progress does not: that is the
-  /// reader's own business and belongs to no catalogue.
+  /// Only a book being created gets here — its one trip out. Later edits and
+  /// reading progress stay on the device: those records are the reader's own,
+  /// and the catalogue has a human to curate what it was given.
   ///
   /// Only the book's own facts travel — title, author, edition, cover. Notes,
   /// purchase details, copy photos and shelves never leave the device.
