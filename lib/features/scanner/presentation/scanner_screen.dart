@@ -17,6 +17,7 @@ import '../../../core/widgets/app_buttons.dart';
 import '../../../core/widgets/app_icons.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../../data/repositories/scan_service.dart';
+import '../../../domain/models/enums.dart';
 import '../../books/presentation/add_book_screen.dart';
 import 'widgets/scan_result_sheet.dart';
 import 'widgets/scanner_overlay.dart';
@@ -178,7 +179,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen>
         context,
         builder: (_) => ScanResultSheet(result: result),
       );
-      await _afterSheet(action);
+      await _afterSheet(action, result);
     } on ScanFailure catch (failure) {
       if (!mounted) return;
       await showAppSheet<void>(
@@ -206,14 +207,35 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen>
     }
   }
 
-  Future<void> _afterSheet(ScanNextAction? action) async {
+  /// The sheet is gone by the time this runs, so this is where any navigation
+  /// happens: a route pushed from the sheet's own context would be pushed from
+  /// a deactivated element, and then popped again by the close below.
+  Future<void> _afterSheet(ScanNextAction? action, ScanResult result) async {
     if (!mounted) return;
-    if (action == ScanNextAction.close) {
-      // The sheet navigated somewhere or finished the job.
-      if (context.canPop()) context.pop();
-      return;
+
+    switch (action) {
+      case ScanNextAction.openBook:
+        final workId = result.details?.work.id;
+        if (context.canPop()) context.pop();
+        if (workId != null && mounted) {
+          context.push(Routes.bookDetails(workId));
+        }
+
+      case ScanNextAction.addWithDetails:
+        final draft = result.toDraft()..ownership = Ownership.owned;
+        if (context.canPop()) context.pop();
+        if (mounted) {
+          context.push(Routes.addBook, extra: AddBookArgs(prefill: draft));
+        }
+
+      case ScanNextAction.close:
+        // The job is done — adding, wishlisting, or simply closing.
+        if (context.canPop()) context.pop();
+
+      case ScanNextAction.scanNext:
+      case null:
+        _resume();
     }
-    _resume();
   }
 
   void _resume() {

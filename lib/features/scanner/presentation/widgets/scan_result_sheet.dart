@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../core/l10n_extensions.dart';
 import '../../../../core/providers.dart';
-import '../../../../core/routing/routes.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/theme/typography.dart';
 import '../../../../core/utils/formatting.dart';
@@ -22,10 +20,13 @@ import '../../../../data/repositories/scan_service.dart';
 import '../../../../domain/models/book_draft.dart';
 import '../../../../domain/models/enums.dart';
 import '../../../../domain/models/library_models.dart';
-import '../../../books/presentation/add_book_screen.dart';
 
 /// What the user chose to do next on a result sheet.
-enum ScanNextAction { scanNext, close }
+///
+/// The sheet reports the choice and nothing more: it is about to be torn down,
+/// and a route pushed from a dead context goes nowhere. The scanner is still
+/// alive, still knows which book was scanned, and does the navigating.
+enum ScanNextAction { scanNext, close, openBook, addWithDetails }
 
 /// The verdict sheet. Owned and not-owned share one layout so the answer always
 /// lands in the same place, and all five bookstore questions — own it, which
@@ -45,14 +46,12 @@ class _ScanResultSheetState extends ConsumerState<ScanResultSheet> {
   ScanResult get result => widget.result;
 
   Future<void> _add({bool withDetails = false}) async {
-    final draft = result.toDraft()..ownership = Ownership.owned;
-
     if (withDetails) {
-      Navigator.of(context).pop(ScanNextAction.close);
-      context.push(Routes.addBook, extra: AddBookArgs(prefill: draft));
+      Navigator.of(context).pop(ScanNextAction.addWithDetails);
       return;
     }
 
+    final draft = result.toDraft()..ownership = Ownership.owned;
     final l10n = context.l10n;
     setState(() => _busy = true);
     try {
@@ -164,8 +163,7 @@ class _ScanResultSheetState extends ConsumerState<ScanResultSheet> {
                       ? null
                       : () {
                           if (owned && details != null) {
-                            Navigator.of(context).pop(ScanNextAction.close);
-                            context.push(Routes.bookDetails(details.work.id));
+                            Navigator.of(context).pop(ScanNextAction.openBook);
                           } else {
                             _add(withDetails: true);
                           }
