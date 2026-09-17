@@ -287,8 +287,6 @@
   "addSaveChanges": "Сохранить изменения",
   "addToWishlist": "Добавить в желаемое",
   "scanIsbnSemantic": "Отсканировать ISBN",
-  "shareOffline": "Не удалось связаться с базой книг — ваша книга всё равно сохранена",
-  "shareRejected": "База книг не приняла запись",
   "detailsErrorTitle": "Не удалось открыть книгу",
   "detailsErrorMessage": "При чтении из вашей библиотеки что-то пошло не так.",
   "detailsRemovedTitle": "Больше нет в вашей библиотеке",

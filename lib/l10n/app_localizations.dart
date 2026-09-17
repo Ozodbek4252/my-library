@@ -1737,18 +1737,6 @@ abstract class AppL10n {
   /// **'Scan the ISBN'**
   String get scanIsbnSemantic;
 
-  /// No description provided for @shareOffline.
-  ///
-  /// In en, this message translates to:
-  /// **'Couldn\'t reach the book database — your book is saved anyway'**
-  String get shareOffline;
-
-  /// No description provided for @shareRejected.
-  ///
-  /// In en, this message translates to:
-  /// **'The book database wouldn\'t accept it'**
-  String get shareRejected;
-
   /// No description provided for @detailsErrorTitle.
   ///
   /// In en, this message translates to:

@@ -33,7 +33,6 @@ class AddBookArgs {
     this.existingWorkId,
     this.workId,
     this.initialIsbn,
-    this.unknownToProviders = false,
   });
 
   /// Fields already known — from a scan or from the work being extended.
@@ -47,10 +46,6 @@ class AddBookArgs {
 
   /// Pre-filled ISBN from manual entry in the scanner.
   final String? initialIsbn;
-
-  /// True when a lookup already came back empty for this ISBN, so the book is
-  /// worth offering back to the shared database once the user has typed it in.
-  final bool unknownToProviders;
 }
 
 /// Manual entry, and the editor for a book already in the library. The two are
@@ -241,12 +236,8 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
         if (!mounted) return;
         AppToast.show(context, l10n.toastChangesSaved);
         // Corrections are worth having: the cover this edit added, the page
-        // count it fixed. Sent quietly — the user asked to save, not publish.
-        final shared = _shareWithCatalogue(
-          Navigator.of(context, rootNavigator: true).context,
-          l10n,
-          announce: false,
-        );
+        // count it fixed. Started before the pop so `ref` is still live.
+        final shared = _shareWithCatalogue();
         context.pop();
         unawaited(shared);
         return;
@@ -271,14 +262,8 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
                 : l10n.toastAddedToLibrary,
       );
       // Started before the pop, so the provider is read while this screen is
-      // still alive, and handed a context that outlives it for the toast.
-      final shared = (widget.draft?.unknownToProviders ?? false)
-          ? _shareWithCatalogue(
-              Navigator.of(context, rootNavigator: true).context,
-              l10n,
-              announce: true,
-            )
-          : Future<void>.value();
+      // still alive.
+      final shared = _shareWithCatalogue();
       context.pop();
       unawaited(shared);
     } catch (e) {
@@ -415,37 +400,34 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
     }
   }
 
-  /// Sends the book to the shared catalogue.
+  /// Sends the book to the shared catalogue, in the background and in silence.
   ///
-  /// Two moments get here: a book a scan could not find, the first time it is
-  /// saved, and every edit to a book already on the shelves — a cover added
-  /// later, a page count corrected.
+  /// Every save of a book record gets here — a new one, or an edit that added
+  /// a cover or fixed a page count. Reading progress does not: that is the
+  /// reader's own business and belongs to no catalogue.
   ///
-  /// [announce] is for the first case only. Volunteering an unknown book is
-  /// something the reader did, so it is worth a word back; saving an edit is
-  /// not, and a "queued for review" toast after changing a page count would
-  /// only puzzle.
+  /// Only the book's own facts travel — title, author, edition, cover. Notes,
+  /// purchase details, copy photos and shelves never leave the device.
   ///
-  /// Only the book's own facts travel — title, author and edition. Notes,
-  /// purchase details, photos and shelves never leave the device.
+  /// Nothing is ever reported back. The reader asked to save a book, not to
+  /// file a submission, and a service they never chose to talk to should not
+  /// be interrupting them — whether it succeeded or not.
   ///
-  /// Everything up to the first await runs before the screen closes; the
-  /// [context] is the root navigator's, which outlives it.
-  Future<void> _shareWithCatalogue(
-    BuildContext context,
-    AppL10n l10n, {
-    required bool announce,
-  }) async {
+  /// Called before the screen closes, so `ref` is still live: everything up to
+  /// the first await runs synchronously.
+  Future<void> _shareWithCatalogue() async {
     final scraper = ref.read(bookScraperSourceProvider);
     if (scraper == null || !scraper.isConfigured) return;
 
-    // The ISBN is the identity the catalogue is built on. A book without one
-    // would merge on a fuzzy fingerprint, so it stays on this device.
-    final isbn = _draft.isbn13 ?? _draft.isbn10;
-    if (isbn == null || !Isbn.isValid(isbn)) return;
+    // A book with no ISBN is still worth having — the catalogue merges it on a
+    // fingerprint and a human sorts it out. An ISBN that fails its check digit
+    // is dropped rather than sent: the service would only refuse the whole
+    // book over it.
+    final raw = _draft.isbn13 ?? _draft.isbn10;
+    final isbn = raw != null && Isbn.isValid(raw) ? raw : null;
 
     try {
-      final message = await scraper.suggest(
+      await scraper.suggest(
         title: _draft.title,
         isbn: isbn,
         authors: _draft.authors,
@@ -458,17 +440,9 @@ class _AddBookScreenState extends ConsumerState<AddBookScreen> {
         // in existence for a book no shop has listed.
         coverImagePath: _draft.coverImagePath,
       );
-      if (announce && context.mounted) AppToast.show(context, message);
-    } on MetadataException catch (e) {
-      // The book is saved either way; this only reports what the send did.
-      if (!announce || !context.mounted) return;
-      AppToast.show(
-        context,
-        e.failure == MetadataFailure.network
-            ? l10n.shareOffline
-            : e.message ?? l10n.shareRejected,
-        success: false,
-      );
+    } catch (_) {
+      // Deliberately swallowed. The book is safely saved on the device, and
+      // there is nothing here the reader asked for or could act on.
     }
   }
 

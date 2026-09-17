@@ -287,8 +287,6 @@
   "addSaveChanges": "Oʻzgarishlarni saqlash",
   "addToWishlist": "Istaklarga qoʻshish",
   "scanIsbnSemantic": "ISBN ni skanerlash",
-  "shareOffline": "Kitob bazasiga ulanib boʻlmadi — kitobingiz baribir saqlandi",
-  "shareRejected": "Kitob bazasi uni qabul qilmadi",
   "detailsErrorTitle": "Bu kitobni ochib boʻlmadi",
   "detailsErrorMessage": "Uni kutubxonangizdan oʻqishda xatolik yuz berdi.",
   "detailsRemovedTitle": "Endi kutubxonangizda yoʻq",

@@ -412,8 +412,6 @@
   "addSaveChanges": "Save changes",
   "addToWishlist": "Add to wishlist",
   "scanIsbnSemantic": "Scan the ISBN",
-  "shareOffline": "Couldn't reach the book database — your book is saved anyway",
-  "shareRejected": "The book database wouldn't accept it",
   "detailsErrorTitle": "This book couldn't be opened",
   "detailsErrorMessage": "Something went wrong reading it from your library.",
   "detailsRemovedTitle": "No longer in your library",

@@ -948,13 +948,6 @@ class AppL10nRu extends AppL10n {
   String get scanIsbnSemantic => 'Отсканировать ISBN';
 
   @override
-  String get shareOffline =>
-      'Не удалось связаться с базой книг — ваша книга всё равно сохранена';
-
-  @override
-  String get shareRejected => 'База книг не приняла запись';
-
-  @override
   String get detailsErrorTitle => 'Не удалось открыть книгу';
 
   @override

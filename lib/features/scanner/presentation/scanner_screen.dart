@@ -263,7 +263,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen>
     context.pop();
     context.push(
       Routes.addBook,
-      extra: AddBookArgs(initialIsbn: isbn, unknownToProviders: true),
+      extra: AddBookArgs(initialIsbn: isbn),
     );
   }
 

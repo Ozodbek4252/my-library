@@ -931,13 +931,6 @@ class AppL10nUz extends AppL10n {
   String get scanIsbnSemantic => 'ISBN ni skanerlash';
 
   @override
-  String get shareOffline =>
-      'Kitob bazasiga ulanib boʻlmadi — kitobingiz baribir saqlandi';
-
-  @override
-  String get shareRejected => 'Kitob bazasi uni qabul qilmadi';
-
-  @override
   String get detailsErrorTitle => 'Bu kitobni ochib boʻlmadi';
 
   @override

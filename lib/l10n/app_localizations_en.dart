@@ -931,13 +931,6 @@ class AppL10nEn extends AppL10n {
   String get scanIsbnSemantic => 'Scan the ISBN';
 
   @override
-  String get shareOffline =>
-      'Couldn\'t reach the book database — your book is saved anyway';
-
-  @override
-  String get shareRejected => 'The book database wouldn\'t accept it';
-
-  @override
   String get detailsErrorTitle => 'This book couldn\'t be opened';
 
   @override
