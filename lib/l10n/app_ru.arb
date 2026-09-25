@@ -1,7 +1,7 @@
 {
   "@@locale": "ru",
   "languageName": "Русский",
-  "appTitle": "Книжная коллекция",
+  "appTitle": "Shelf: My Book Library",
   "navLibrary": "Библиотека",
   "navReading": "Чтение",
   "navScan": "Сканер",
@@ -440,7 +440,7 @@
   "profileAppearanceValue": "Бумага",
   "profileShowOnboarding": "Показать вступление снова",
   "profileVersion": "Версия",
-  "profileFooter": "Book Collection {version} · ваша библиотека хранится на устройстве",
+  "profileFooter": "Shelf: My Book Library {version} · ваша библиотека хранится на устройстве",
   "profileShelvesTitle": "Полки и места",
   "profileShelvesSubtitle": "Где лежат ваши экземпляры. Место задаётся на странице редактирования экземпляра.",
   "profileShelvesEmpty": "Места пока не указаны.",

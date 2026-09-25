@@ -12,7 +12,7 @@ class AppL10nEn extends AppL10n {
   String get languageName => 'English';
 
   @override
-  String get appTitle => 'Book Collection';
+  String get appTitle => 'Shelf: My Book Library';
 
   @override
   String get navLibrary => 'Library';
@@ -1475,7 +1475,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String profileFooter(String version) {
-    return 'Book Collection $version · your library lives on your device';
+    return 'Shelf: My Book Library $version · your library lives on your device';
   }
 
   @override

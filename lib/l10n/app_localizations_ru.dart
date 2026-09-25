@@ -12,7 +12,7 @@ class AppL10nRu extends AppL10n {
   String get languageName => 'Русский';
 
   @override
-  String get appTitle => 'Книжная коллекция';
+  String get appTitle => 'Shelf: My Book Library';
 
   @override
   String get navLibrary => 'Библиотека';
@@ -1503,7 +1503,7 @@ class AppL10nRu extends AppL10n {
 
   @override
   String profileFooter(String version) {
-    return 'Book Collection $version · ваша библиотека хранится на устройстве';
+    return 'Shelf: My Book Library $version · ваша библиотека хранится на устройстве';
   }
 
   @override

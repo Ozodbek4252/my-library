@@ -43,6 +43,11 @@ void main() {
     }
   });
 
+  /// The app's own name is a proper noun. It reads the same in every
+  /// language, the way Spotify or Kindle do, so it is not a missed
+  /// translation when it matches English.
+  const productNames = {'appTitle'};
+
   test('no message is left as the English text in another language', () {
     final english = arb('en');
 
@@ -50,7 +55,8 @@ void main() {
       final other = arb(code);
       final untranslated = [
         for (final key in messageKeys(english))
-          if (other[key] == english[key] &&
+          if (!productNames.contains(key) &&
+              other[key] == english[key] &&
               // Names, marks and numerals read the same in every language,
               // and a message that is nothing but placeholders — "{from} –
               // {to}" — has no words to translate.
@@ -61,6 +67,16 @@ void main() {
         untranslated,
         isEmpty,
         reason: 'app_$code.arb still holds the English wording for these',
+      );
+    }
+  });
+
+  test('the app name is the same in every language', () {
+    for (final code in ['uz', 'ru']) {
+      expect(
+        arb(code)['appTitle'],
+        arb('en')['appTitle'],
+        reason: 'a product name is not translated',
       );
     }
   });

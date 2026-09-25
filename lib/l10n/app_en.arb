@@ -1,7 +1,7 @@
 {
   "@@locale": "en",
   "languageName": "English",
-  "appTitle": "Book Collection",
+  "appTitle": "Shelf: My Book Library",
   "navLibrary": "Library",
   "navReading": "Reading",
   "navScan": "Scan",
@@ -805,7 +805,7 @@
   "profileAppearanceValue": "Paper",
   "profileShowOnboarding": "Show onboarding again",
   "profileVersion": "Version",
-  "profileFooter": "Book Collection {version} · your library lives on your device",
+  "profileFooter": "Shelf: My Book Library {version} · your library lives on your device",
   "@profileFooter": {
     "placeholders": {
       "version": {

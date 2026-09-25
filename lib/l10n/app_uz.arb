@@ -1,7 +1,7 @@
 {
   "@@locale": "uz",
   "languageName": "Oʻzbekcha",
-  "appTitle": "Kitob toʻplami",
+  "appTitle": "Shelf: My Book Library",
   "navLibrary": "Kutubxona",
   "navReading": "Oʻqish",
   "navScan": "Skaner",
@@ -440,7 +440,7 @@
   "profileAppearanceValue": "Qogʻoz",
   "profileShowOnboarding": "Tanishtiruvni qayta koʻrsatish",
   "profileVersion": "Versiya",
-  "profileFooter": "Book Collection {version} · kutubxonangiz shu qurilmada saqlanadi",
+  "profileFooter": "Shelf: My Book Library {version} · kutubxonangiz shu qurilmada saqlanadi",
   "profileShelvesTitle": "Javonlar va joylar",
   "profileShelvesSubtitle": "Nusxalaringiz qayerda turadi. Har bir nusxaning tahrirlash sahifasidan joyini belgilang.",
   "profileShelvesEmpty": "Hali joy kiritilmagan.",

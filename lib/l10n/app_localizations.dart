@@ -108,7 +108,7 @@ abstract class AppL10n {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'Book Collection'**
+  /// **'Shelf: My Book Library'**
   String get appTitle;
 
   /// No description provided for @navLibrary.
@@ -2616,7 +2616,7 @@ abstract class AppL10n {
   /// No description provided for @profileFooter.
   ///
   /// In en, this message translates to:
-  /// **'Book Collection {version} · your library lives on your device'**
+  /// **'Shelf: My Book Library {version} · your library lives on your device'**
   String profileFooter(String version);
 
   /// No description provided for @profileShelvesTitle.

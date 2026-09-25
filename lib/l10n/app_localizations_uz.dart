@@ -12,7 +12,7 @@ class AppL10nUz extends AppL10n {
   String get languageName => 'Oʻzbekcha';
 
   @override
-  String get appTitle => 'Kitob toʻplami';
+  String get appTitle => 'Shelf: My Book Library';
 
   @override
   String get navLibrary => 'Kutubxona';
@@ -1474,7 +1474,7 @@ class AppL10nUz extends AppL10n {
 
   @override
   String profileFooter(String version) {
-    return 'Book Collection $version · kutubxonangiz shu qurilmada saqlanadi';
+    return 'Shelf: My Book Library $version · kutubxonangiz shu qurilmada saqlanadi';
   }
 
   @override

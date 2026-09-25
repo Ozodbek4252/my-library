@@ -10,7 +10,7 @@
 
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
-        android:label="Book Collection"
+        android:label="Shelf: My Book Library"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
