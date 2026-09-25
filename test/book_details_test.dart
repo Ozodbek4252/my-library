@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_library/core/providers.dart';
+import 'package:my_library/core/widgets/book_cover.dart';
 import 'package:my_library/data/local/database.dart';
 import 'package:my_library/data/repositories/collection_mutations.dart';
 import 'package:my_library/features/books/presentation/book_details_screen.dart';
@@ -65,6 +66,38 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('No edition recorded yet.'), findsOneWidget);
     expect(find.text('0 editions of this work'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 50));
+  });
+
+  testWidgets('the editions row shows the real cover, not a colour block',
+      (tester) async {
+    final added = await db.addBook(
+      BookDraft(
+        title: 'Propaganda',
+        authors: ['Edward Bernays'],
+        coverUrl: 'https://example.test/propaganda.jpg',
+      ),
+    );
+
+    await pumpDetails(tester, added.workId);
+
+    // Every cover on the screen should be carrying the artwork: the hero and
+    // the little spine in the editions row both.
+    final covers = tester.widgetList<BookCover>(find.byType(BookCover));
+    expect(covers, isNotEmpty);
+    expect(
+      covers.every((c) => c.coverUrl == 'https://example.test/propaganda.jpg'),
+      isTrue,
+      reason: 'the spine used to be a flat swatch of the palette colour',
+    );
+
+    // And the small one is the editions row's, at spine size.
+    expect(
+      covers.any((c) => c.width == 20 && c.height == 29),
+      isTrue,
+    );
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 50));

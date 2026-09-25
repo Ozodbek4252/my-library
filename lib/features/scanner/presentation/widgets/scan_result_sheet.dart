@@ -431,9 +431,6 @@ class _CopyRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final e = edition.edition;
-    final color = AppColors
-        .coverPalette[e.coverColorIndex.abs() % AppColors.coverPalette.length]
-        .$1;
     final location = edition.copies
         .map((c) => c.location)
         .whereType<String>()
@@ -451,13 +448,16 @@ class _CopyRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
+          BookCover(
+            title: e.editionName ?? e.publisher ?? '',
+            colorIndex: e.coverColorIndex,
+            coverUrl: e.coverUrl,
+            coverImagePath: e.coverImagePath,
             width: 26,
             height: 38,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(2),
-            ),
+            radius: 2,
+            showText: false,
+            shadows: const [],
           ),
           const SizedBox(width: 11),
           Expanded(

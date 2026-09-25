@@ -9,6 +9,7 @@ import '../../../core/theme/tokens.dart';
 import '../../../core/theme/typography.dart';
 import '../../../core/utils/formatting.dart';
 import '../../../core/widgets/app_buttons.dart';
+import '../../../core/widgets/book_cover.dart';
 import '../../../core/widgets/app_icons.dart';
 import '../../../core/widgets/app_sheet.dart';
 import '../../../core/widgets/app_toast.dart';
@@ -165,9 +166,6 @@ class _EditionCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final e = edition.edition;
     final isPrimary = e.id == details.primaryEditionId;
-    final color = AppColors
-        .coverPalette[e.coverColorIndex.abs() % AppColors.coverPalette.length]
-        .$1;
 
     return Container(
       padding: const EdgeInsets.all(15),
@@ -182,17 +180,19 @@ class _EditionCard extends ConsumerWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
+              BookCover(
+                // The edition's own artwork; the colour block with a painted
+                // spine is what shows when there is none.
+                title: details.work.title,
+                colorIndex: e.coverColorIndex,
+                coverUrl: e.coverUrl,
+                coverImagePath: e.coverImagePath,
                 width: 44,
                 height: 66,
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(width: 4, color: const Color(0x47000000)),
-                ),
+                radius: 2,
+                showText: false,
+                shadows: const [],
+                spineWidth: 4,
               ),
               const SizedBox(width: 13),
               Expanded(

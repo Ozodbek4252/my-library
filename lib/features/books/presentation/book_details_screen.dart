@@ -726,25 +726,28 @@ class _EditionsRow extends StatelessWidget {
                   for (var i = 0; i < count.clamp(0, 2); i++)
                     Positioned(
                       left: i * 13,
-                      child: Container(
+                      child: BookCover(
+                        // The real artwork at spine size, falling back to the
+                        // edition's colour when there is none.
+                        title: details.work.title,
+                        colorIndex: details.editions[i].edition.coverColorIndex,
+                        coverUrl: details.editions[i].edition.coverUrl,
+                        coverImagePath:
+                            details.editions[i].edition.coverImagePath,
                         width: 20,
                         height: 29,
-                        decoration: BoxDecoration(
-                          color: AppColors.coverPalette[
-                                  (details.editions[i].edition.coverColorIndex)
-                                      .abs() %
-                                      AppColors.coverPalette.length]
-                              .$1,
-                          borderRadius: BorderRadius.circular(2),
-                          border: i == 1
-                              ? const Border(
-                                  left: BorderSide(
-                                    color: AppColors.paperRaised,
-                                    width: 1.5,
-                                  ),
-                                )
-                              : null,
-                        ),
+                        radius: 2,
+                        showText: false,
+                        shadows: const [],
+                        // Separates the two spines where they overlap.
+                        border: i == 1
+                            ? const Border(
+                                left: BorderSide(
+                                  color: AppColors.paperRaised,
+                                  width: 1.5,
+                                ),
+                              )
+                            : null,
                       ),
                     ),
                 ],
