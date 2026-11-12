@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/l10n_extensions.dart';
 import '../../../core/providers.dart';
@@ -28,6 +29,7 @@ class ProfileScreen extends ConsumerWidget {
     final total = ref.watch(libraryTotalProvider).value ?? 0;
     final shelves = ref.watch(shelfCountProvider).value ?? 0;
     final stats = ref.watch(statisticsProvider).value;
+    final feedbackUrl = ref.watch(feedbackUrlProvider);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -173,6 +175,16 @@ class ProfileScreen extends ConsumerWidget {
               labelWidth: 160,
               verticalPadding: 14,
             ),
+            // Hidden rather than dead when no link is configured: a button
+            // that goes nowhere is worse than no button.
+            if (feedbackUrl != null)
+              FieldRow(
+                label: context.l10n.profileFeedback,
+                value: 'Telegram',
+                labelWidth: 160,
+                verticalPadding: 14,
+                onTap: () => _openFeedback(context, feedbackUrl),
+              ),
             FieldRow(
               label: context.l10n.profileShowOnboarding,
               value: '',
@@ -200,6 +212,27 @@ class ProfileScreen extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  /// Opens the feedback link outside the app — Telegram if it is installed,
+  /// the browser if it is not.
+  Future<void> _openFeedback(BuildContext context, String url) async {
+    final l10n = context.l10n;
+    final uri = Uri.tryParse(url);
+
+    var opened = false;
+    if (uri != null) {
+      try {
+        opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (_) {
+        opened = false;
+      }
+    }
+
+    // Said out loud: the reader tapped this expecting to land somewhere.
+    if (!opened && context.mounted) {
+      AppToast.show(context, l10n.toastCouldNotOpenFeedback, success: false);
+    }
   }
 
   /// The interface language. Each option is written in itself, so someone who

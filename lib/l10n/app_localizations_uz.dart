@@ -1470,6 +1470,12 @@ class AppL10nUz extends AppL10n {
   String get profileShowOnboarding => 'Tanishtiruvni qayta koʻrsatish';
 
   @override
+  String get profileFeedback => 'Fikr-mulohaza';
+
+  @override
+  String get toastCouldNotOpenFeedback => 'Telegramni ochib boʻlmadi';
+
+  @override
   String get profileVersion => 'Versiya';
 
   @override

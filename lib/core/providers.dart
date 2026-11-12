@@ -59,6 +59,13 @@ final bookScraperSourceProvider = Provider<BookScraperSource?>((ref) {
   return source;
 });
 
+/// Where "Feedback" in Profile sends the reader, or null when the build has
+/// no link configured. A provider rather than a direct [AppConfig] read so the
+/// screen can be exercised both ways.
+final feedbackUrlProvider = Provider<String?>(
+  (ref) => AppConfig.hasFeedbackUrl ? AppConfig.feedbackUrl.trim() : null,
+);
+
 final bookMetadataRepositoryProvider = Provider<BookMetadataRepository>((ref) {
   final remote = OpenLibrarySource();
   ref.onDispose(remote.close);

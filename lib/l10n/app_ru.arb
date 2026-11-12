@@ -439,6 +439,8 @@
   "profileAppearance": "Оформление",
   "profileAppearanceValue": "Бумага",
   "profileShowOnboarding": "Показать вступление снова",
+  "profileFeedback": "Обратная связь",
+  "toastCouldNotOpenFeedback": "Не удалось открыть Telegram",
   "profileVersion": "Версия",
   "profileFooter": "Shelf: My Book Library {version} · ваша библиотека хранится на устройстве",
   "profileShelvesTitle": "Полки и места",

@@ -439,6 +439,8 @@
   "profileAppearance": "Koʻrinish",
   "profileAppearanceValue": "Qogʻoz",
   "profileShowOnboarding": "Tanishtiruvni qayta koʻrsatish",
+  "profileFeedback": "Fikr-mulohaza",
+  "toastCouldNotOpenFeedback": "Telegramni ochib boʻlmadi",
   "profileVersion": "Versiya",
   "profileFooter": "Shelf: My Book Library {version} · kutubxonangiz shu qurilmada saqlanadi",
   "profileShelvesTitle": "Javonlar va joylar",

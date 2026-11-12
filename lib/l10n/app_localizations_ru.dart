@@ -1499,6 +1499,12 @@ class AppL10nRu extends AppL10n {
   String get profileShowOnboarding => 'Показать вступление снова';
 
   @override
+  String get profileFeedback => 'Обратная связь';
+
+  @override
+  String get toastCouldNotOpenFeedback => 'Не удалось открыть Telegram';
+
+  @override
   String get profileVersion => 'Версия';
 
   @override

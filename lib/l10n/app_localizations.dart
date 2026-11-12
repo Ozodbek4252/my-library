@@ -2607,6 +2607,18 @@ abstract class AppL10n {
   /// **'Show onboarding again'**
   String get profileShowOnboarding;
 
+  /// No description provided for @profileFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback'**
+  String get profileFeedback;
+
+  /// No description provided for @toastCouldNotOpenFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open Telegram'**
+  String get toastCouldNotOpenFeedback;
+
   /// No description provided for @profileVersion.
   ///
   /// In en, this message translates to:

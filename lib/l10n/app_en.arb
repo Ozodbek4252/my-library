@@ -804,6 +804,8 @@
   "profileAppearance": "Appearance",
   "profileAppearanceValue": "Paper",
   "profileShowOnboarding": "Show onboarding again",
+  "profileFeedback": "Feedback",
+  "toastCouldNotOpenFeedback": "Couldn't open Telegram",
   "profileVersion": "Version",
   "profileFooter": "Shelf: My Book Library {version} · your library lives on your device",
   "@profileFooter": {

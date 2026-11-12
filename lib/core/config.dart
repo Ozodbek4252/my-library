@@ -22,4 +22,18 @@ abstract final class AppConfig {
       String.fromEnvironment('BOOK_API_TOKEN', defaultValue: '');
 
   static bool get hasBookApi => bookApiBaseUrl.trim().isNotEmpty;
+
+  /// Where "Feedback" in Profile sends the reader — a Telegram bot, channel
+  /// or group.
+  ///
+  /// ```sh
+  /// flutter build apk --dart-define=FEEDBACK_URL=https://t.me/your_bot
+  /// ```
+  ///
+  /// Empty by default on purpose: a button that opens someone else's chat is
+  /// worse than no button, so the row is hidden until this is set.
+  static const feedbackUrl =
+      String.fromEnvironment('FEEDBACK_URL', defaultValue: '');
+
+  static bool get hasFeedbackUrl => feedbackUrl.trim().isNotEmpty;
 }

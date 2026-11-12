@@ -1471,6 +1471,12 @@ class AppL10nEn extends AppL10n {
   String get profileShowOnboarding => 'Show onboarding again';
 
   @override
+  String get profileFeedback => 'Feedback';
+
+  @override
+  String get toastCouldNotOpenFeedback => 'Couldn\'t open Telegram';
+
+  @override
   String get profileVersion => 'Version';
 
   @override
